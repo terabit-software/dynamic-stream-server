@@ -1,11 +1,8 @@
-import os
 import time
 import subprocess
 import BaseHTTPServer
 import SocketServer
 import urlparse
-import socket
-import thread
 import threading
 
 
@@ -55,7 +52,7 @@ class Camera(object):
             while True:
                 self.proc.wait()
                 print('FFMPEG died!')
-                break
+                #break
                 if self.run:
                     time.sleep(self.timeout)
                     self.proc = self.fn()
@@ -84,7 +81,8 @@ def make_cmd(num):
 
 def run_proc(num):
     cmd = make_cmd(num)
-    print(' '.join(cmd))
+    #print(' '.join(cmd))
+    print('Starting FFMPEG')
     return subprocess.Popen(cmd, 
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
@@ -114,7 +112,6 @@ def stop(num, data):
 class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         info = urlparse.urlparse(self.path)
-        print info
         id, action = info.path.strip('/').split('/')
         if action == 'start':
             start(id, data)
@@ -123,7 +120,25 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     do_POST = do_GET
 
-        
-ss = SocketServer.TCPServer(("", 8000), Handler)
-ss.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-ss.serve_forever()
+
+if __name__ == '__main__':
+
+    host, port = 'localhost', 8000
+
+    SocketServer.TCPServer.allow_reuse_address = True
+    ss = None
+    while True:
+        try:
+            ss = SocketServer.TCPServer((host, port), Handler)
+        except IOError:
+            print('Waiting TCP port to be used.')
+            time.sleep(run_timeout)
+        else:
+            print('Connected to %s:%s' % (host, port))
+            break
+
+    try:
+        ss.serve_forever()
+    except KeyboardInterrupt:
+        ss.server_close()
+        print('Server Closed')
