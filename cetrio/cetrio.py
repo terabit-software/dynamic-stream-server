@@ -52,10 +52,14 @@ class Camera(object):
             while True:
                 self.proc.wait()
                 print('FFMPEG died!')
-                #break
+
                 if self.run:
                     time.sleep(self.timeout)
-                    self.proc = self.fn()
+                    if self.run:
+                        # It might be killed after waiting
+                        self.proc = self.fn()
+                        continue
+                break
 
         self.thread = threading.Thread(target=worker)
         self.thread.setDaemon(True)
@@ -66,13 +70,21 @@ class Camera(object):
             return
         self.run = False
 
-        time.sleep(run_timeout)
-        if not self.cnt:
-            self.proc.kill()
-            self.proc.wait()
-            self.proc = None
-        else:
-            self.run = True
+        def stop_worker():
+            time.sleep(run_timeout)
+            if not self.cnt:
+                try:
+                    self.proc.kill()
+                    self.proc.wait()
+                except OSError:
+                    pass
+                self.proc = None
+            else:
+                self.run = True
+
+        thread = threading.Thread(target=stop_worker)
+        thread.setDaemon(True)
+        thread.start()
 
 def make_cmd(num):
     return ['/usr/local/bin/ffmpeg', '-probesize', '200K', '-re', '-i', 
