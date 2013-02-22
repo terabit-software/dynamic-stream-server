@@ -8,6 +8,7 @@ import threading
 
 data = {}
 run_timeout = 10
+reload_timeout = 1
 in_stream = 'rtmp://200.141.78.68:1935/cet-rio/{0}.stream ' + \
             'pageUrl=http://transito.rio.rj.gov.br/transito.html'
 out_stream = 'rtmp://localhost:1935/cetrio/{0}'
@@ -17,7 +18,7 @@ class Camera(object):
         self.lock = threading.Lock()
         self.fn = fn
         self.cnt = 0
-        self.run = True
+        self.run = False
         self.proc = None
         self.thread = None
         self.timeout = timeout
@@ -51,10 +52,10 @@ class Camera(object):
             
             while True:
                 self.proc.wait()
-                print('FFMPEG died!')
-
+                print('FFMPEG from pid {0} died!'.format(self.proc.pid))
+                self.proc = None
                 if self.run:
-                    time.sleep(self.timeout)
+                    time.sleep(reload_timeout)
                     if self.run:
                         # It might be killed after waiting
                         self.proc = self.fn()
@@ -71,7 +72,7 @@ class Camera(object):
         self.run = False
 
         def stop_worker():
-            time.sleep(run_timeout)
+            time.sleep(self.timeout)
             if not self.cnt:
                 try:
                     self.proc.kill()
@@ -106,7 +107,7 @@ def start(num, data):
         camera = Camera(lambda: run_proc(num))
         data[num] = camera
 
-    if not camera.cnt:
+    if not camera.proc and not camera.run:
         camera.start()
     camera.inc()
     print(data)
