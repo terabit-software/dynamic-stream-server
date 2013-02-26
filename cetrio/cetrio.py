@@ -52,7 +52,7 @@ class Camera(object):
             
             while True:
                 self.proc.wait()
-                print('FFMPEG from pid {0} died!'.format(self.proc.pid))
+                print('FFMPEG from pid {0} died!'.format(self.proc and self.proc.pid))
                 self.proc = None
                 if self.run:
                     time.sleep(reload_timeout)
@@ -88,7 +88,7 @@ class Camera(object):
         thread.start()
 
 def make_cmd(num):
-    return ['/usr/local/bin/ffmpeg', '-probesize', '200K', '-re', '-i', 
+    return ['/usr/local/bin/ffmpeg', '-probesize', '20K', '-re', '-i', 
             in_stream.format(num), '-vcodec', 'libx264', 
             '-b:v', '100k', '-an', '-f', 'flv', out_stream.format(num)]
 
@@ -96,9 +96,10 @@ def run_proc(num):
     cmd = make_cmd(num)
     #print(' '.join(cmd))
     print('Starting FFMPEG')
-    return subprocess.Popen(cmd, 
+    with open('/tmp/ffmpeg-{0}'.format(num),'w') as f:
+        return subprocess.Popen(cmd, 
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+                            stderr=f)
 
 def start(num, data):
     try:
