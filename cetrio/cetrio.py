@@ -1,6 +1,7 @@
 import time
 import subprocess
 import threading
+import os
 try:
     # Python 3
     import socketserver
@@ -25,7 +26,9 @@ in_stream = 'rtmp://200.141.78.68:1935/cet-rio/{0}.stream ' + \
 out_stream = 'rtmp://localhost:1935/cetrio/{0}'
 
 config = configparser.ConfigParser()
-config.read('cetrio.conf')
+
+dirname = os.path.abspath(os.path.dirname(__file__))
+config.read(os.path.join(dirname, 'cetrio.conf'))
 
 
 def get_stats():
@@ -164,6 +167,7 @@ class Handler(server.BaseHTTPRequestHandler):
 
 def initialize_from_stats():
     stats = get_stats()['server']['application']
+    if isinstance(stats, dict): stats = [stats]
     app = config.get('app', 'name')
     try:
         app = next(x['live'] for x in stats if x['name'] == app)
