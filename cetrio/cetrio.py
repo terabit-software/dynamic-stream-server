@@ -13,7 +13,7 @@ except ImportError:
     import BaseHTTPServer as server
     import urlparse
     from urllib2 import urlopen
-    import ConfigParser
+    import ConfigParser as configparser
 
 import noxml
 
@@ -24,7 +24,7 @@ in_stream = 'rtmp://200.141.78.68:1935/cet-rio/{0}.stream ' + \
             'pageUrl=http://transito.rio.rj.gov.br/transito.html'
 out_stream = 'rtmp://localhost:1935/cetrio/{0}'
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 config.read('cetrio.conf')
 
 
@@ -58,8 +58,8 @@ class Camera(object):
         with self.lock:
             self._run = value 
 
-    def inc(self):
-        self.cnt += 1
+    def inc(self, k=1):
+        self.cnt += k
         return self
 
     def dec(self):
@@ -109,10 +109,12 @@ class Camera(object):
         thread.setDaemon(True)
         thread.start()
 
+
 def make_cmd(num):
     return ['/usr/local/bin/ffmpeg', '-probesize', '20K', '-re', '-i', 
             in_stream.format(num), '-vcodec', 'libx264', 
             '-b:v', '100k', '-an', '-f', 'flv', out_stream.format(num)]
+
 
 def run_proc(num):
     cmd = make_cmd(num)
@@ -123,7 +125,8 @@ def run_proc(num):
                             stdout=subprocess.PIPE,
                             stderr=f)
 
-def start(num, data):
+
+def start(num, data, increment=1):
     try:
         camera = data[num]
     except KeyError:
@@ -132,8 +135,9 @@ def start(num, data):
 
     if not camera.proc and not camera.run:
         camera.start()
-    camera.inc()
+    camera.inc(increment)
     print(data)
+
 
 def stop(num, data):
     try:
@@ -144,6 +148,7 @@ def stop(num, data):
     if not camera.cnt:
         camera.stop()
     print(data)
+
 
 class Handler(server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -157,7 +162,38 @@ class Handler(server.BaseHTTPRequestHandler):
     do_POST = do_GET
 
 
+def initialize_from_stats():
+    stats = get_stats()['server']['application']
+    app = config.get('app', 'name')
+    try:
+        app = next(x['live'] for x in stats if x['name'] == app)
+    except StopIteration:
+        raise NameError('No app named %r' % app)
+
+    # App clients
+    nclients = int(app['nclients'])
+    if not nclients:
+        return
+    streams = app['stream']
+    if nclients == 1:
+        streams = [streams]
+
+    for stream in streams:
+        # Stream clients
+        nclients = int(stream['nclients'])
+        
+        if 'publishing' in stream:
+            nclients -= 1
+
+        if nclients <= 0:
+            continue
+
+        start(stream['name'], data, nclients)
+
+
 if __name__ == '__main__':
+
+    initialize_from_stats()
 
     host, port = 'localhost', 8000
 
@@ -178,3 +214,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         ss.server_close()
         print('Server Closed')
+
