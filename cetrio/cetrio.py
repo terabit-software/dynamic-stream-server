@@ -1,10 +1,21 @@
 import time
 import subprocess
-import BaseHTTPServer
-import SocketServer
-import urlparse
 import threading
+try:
+    # Python 3
+    import socketserver
+    from http import server
+    import urllib.parse as urlparse
+    from urllib.request import urlopen
+    import configparser
+except ImportError:
+    import SocketServer as socketserver
+    import BaseHTTPServer as server
+    import urlparse
+    from urllib2 import urlopen
+    import ConfigParser
 
+import noxml
 
 data = {}
 run_timeout = 10
@@ -12,6 +23,17 @@ reload_timeout = 1
 in_stream = 'rtmp://200.141.78.68:1935/cet-rio/{0}.stream ' + \
             'pageUrl=http://transito.rio.rj.gov.br/transito.html'
 out_stream = 'rtmp://localhost:1935/cetrio/{0}'
+
+config = ConfigParser.ConfigParser()
+config.read('cetrio.conf')
+
+
+def get_stats():
+    addr = config.get('server', 'addr')
+    stat = config.get('server', 'stat_url')
+    data = urlopen(addr + stat).read()
+    return noxml.load(data)
+
 
 class Camera(object):
     def __init__(self, fn, timeout=run_timeout):
@@ -123,7 +145,7 @@ def stop(num, data):
         camera.stop()
     print(data)
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Handler(server.BaseHTTPRequestHandler):
     def do_GET(self):
         info = urlparse.urlparse(self.path)
         id, action = info.path.strip('/').split('/')
@@ -139,11 +161,11 @@ if __name__ == '__main__':
 
     host, port = 'localhost', 8000
 
-    SocketServer.TCPServer.allow_reuse_address = True
+    socketserver.TCPServer.allow_reuse_address = True
     ss = None
     while True:
         try:
-            ss = SocketServer.TCPServer((host, port), Handler)
+            ss = socketserver.TCPServer((host, port), Handler)
         except IOError:
             print('Waiting TCP port to be used.')
             time.sleep(run_timeout)
