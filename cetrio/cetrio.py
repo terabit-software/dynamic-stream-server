@@ -2,6 +2,7 @@ import time
 import subprocess
 import threading
 import os
+import shlex
 try:
     # Python 3
     import socketserver
@@ -21,9 +22,6 @@ import noxml
 data = {}
 run_timeout = 10
 reload_timeout = 1
-in_stream = 'rtmp://200.141.78.68:1935/cet-rio/{0}.stream ' + \
-            'pageUrl=http://transito.rio.rj.gov.br/transito.html'
-out_stream = 'rtmp://localhost:1935/cetrio/{0}'
 
 config = configparser.ConfigParser()
 
@@ -31,9 +29,22 @@ dirname = os.path.abspath(os.path.dirname(__file__))
 config.read(os.path.join(dirname, 'cetrio.conf'))
 
 
+in_stream = '{0}{1}/{2} {3}'.format(
+    config.get('remote-rtmp-server', 'addr'),
+    config.get('remote-rtmp-server', 'app'),
+    config.get('remote-rtmp-server', 'stream'),
+    config.get('remote-rtmp-server', 'data'),
+)
+
+out_stream = '{0}{1}/'.format(
+	config.get('rtmp-server', 'addr'),
+	config.get('rtmp-server', 'app')
+) + '{0}'
+
+
 def get_stats():
-    addr = config.get('server', 'addr')
-    stat = config.get('server', 'stat_url')
+    addr = config.get('http-server', 'addr')
+    stat = config.get('http-server', 'stat_url')
     data = urlopen(addr + stat).read()
     return noxml.load(data)
 
@@ -50,7 +61,7 @@ class Camera(object):
 
     def __repr__(self):
         pid = self.proc.pid if self.proc else 0
-        return '<Camera: {0} Usuarios, FFMPEG pid: {1}>'.format(self.cnt, pid)
+        return '<Camera: {0} Usuarios, FFmpeg pid: {1}>'.format(self.cnt, pid)
 
     @property
     def run(self):
@@ -77,7 +88,7 @@ class Camera(object):
             
             while True:
                 self.proc.wait()
-                print('FFMPEG from pid {0} died!'.format(self.proc and self.proc.pid))
+                print('FFmpeg from pid {0} died!'.format(self.proc and self.proc.pid))
                 self.proc = None
                 if self.run:
                     time.sleep(reload_timeout)
@@ -114,15 +125,21 @@ class Camera(object):
 
 
 def make_cmd(num):
-    return ['/usr/local/bin/ffmpeg', '-probesize', '20K', '-re', '-i', 
-            in_stream.format(num), '-vcodec', 'libx264', 
-            '-b:v', '100k', '-an', '-f', 'flv', out_stream.format(num)]
+    inp = config.get('ffmpeg', 'input_opt')
+    out = config.get('ffmpeg', 'output_opt')
+
+    args = [config.get('ffmpeg', 'bin')]
+    args += shlex.split(inp)
+    args += ['-i',  in_stream.format(num)]
+    args += shlex.split(out)
+    args.append(out_stream.format(num))
+    return args
 
 
 def run_proc(num):
     cmd = make_cmd(num)
-    #print(' '.join(cmd))
-    print('Starting FFMPEG')
+    #print(cmd, ''.join(cmd), sep='\n')
+    print('Starting FFmpeg')
     with open('/tmp/ffmpeg-{0}'.format(num),'w') as f:
         return subprocess.Popen(cmd, 
                             stdout=subprocess.PIPE,
@@ -168,7 +185,7 @@ class Handler(server.BaseHTTPRequestHandler):
 def initialize_from_stats():
     stats = get_stats()['server']['application']
     if isinstance(stats, dict): stats = [stats]
-    app = config.get('app', 'name')
+    app = config.get('rtmp-server', 'app')
     try:
         app = next(x['live'] for x in stats if x['name'] == app)
     except StopIteration:
@@ -199,7 +216,8 @@ if __name__ == '__main__':
 
     initialize_from_stats()
 
-    host, port = 'localhost', 8000
+    host = config.get('local', 'addr')
+    port = int(config.get('local', 'port'))
 
     socketserver.TCPServer.allow_reuse_address = True
     ss = None
