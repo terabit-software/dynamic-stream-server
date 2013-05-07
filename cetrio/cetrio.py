@@ -9,25 +9,18 @@ try:
     from http import server
     import urllib.parse as urlparse
     from urllib.request import urlopen
-    import configparser
 except ImportError:
     import SocketServer as socketserver
     import BaseHTTPServer as server
     import urlparse
     from urllib2 import urlopen
-    import ConfigParser as configparser
 
 import noxml
+from config import config
 
 data = {}
 run_timeout = 10
 reload_timeout = 1
-
-config = configparser.ConfigParser()
-
-dirname = os.path.abspath(os.path.dirname(__file__))
-config.read(os.path.join(dirname, 'cetrio.conf'))
-
 
 in_stream = '{0}{1}/{2} {3}'.format(
     config.get('remote-rtmp-server', 'addr'),
