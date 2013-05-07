@@ -1,0 +1,1316 @@
+[
+  {
+    "status": true, 
+    "geo": [
+      -22.90026953385686, 
+      -43.17699603271244
+    ], 
+    "id": 1, 
+    "name": "Av. Pres.Vargas X R. 1\u00ba Mar\u00e7o - teste"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90139251837126, 
+      -43.17939095331509
+    ], 
+    "id": 2, 
+    "name": "Av. Pres.Vargas X Av. Rio Branco"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90490245268381, 
+      -43.19035314812741
+    ], 
+    "id": 3, 
+    "name": "Av. Pres.Vargas X P\u00e7a. da Rep\u00fablica"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89644009933714, 
+      -43.18086612527936
+    ], 
+    "id": 4, 
+    "name": "Pra\u00e7a Mau\u00e1"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9137412436575, 
+      -43.17415532191759
+    ], 
+    "id": 5, 
+    "name": "Av. Rio Branco X Aterro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90802851505407, 
+      -43.17698469239652
+    ], 
+    "id": 6, 
+    "name": "Av. Rio Branco X Av. Alm. Barroso"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.8992310877696, 
+      -43.18777733857018
+    ], 
+    "id": 7, 
+    "name": "R. Camerino X R. Bar\u00e3o de S\u00e3o Felix"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9082463808219, 
+      -43.18606924216449
+    ], 
+    "id": 8, 
+    "name": "R. Visconde do Rio Branco X P\u00e7a. da Rep\u00fablica"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91115454611933, 
+      -43.19335130122597
+    ], 
+    "id": 10, 
+    "name": "R. Santana X R. Frei Caneca"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91399637275892, 
+      -43.20455800879786
+    ], 
+    "id": 11, 
+    "name": "Largo do Est\u00e1cio"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.93456034388853, 
+      -43.18749186904458
+    ], 
+    "id": 12, 
+    "name": "R. das Laranjeiras X Soares Cabral"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.94319616860414, 
+      -43.18166048874201
+    ], 
+    "id": 13, 
+    "name": "Praia de Botafogo x Viaduto"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9493500924382, 
+      -43.18417667232434
+    ], 
+    "id": 14, 
+    "name": "R. S\u00e3o Clemente x R. Muniz de Barreto"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95207250242314, 
+      -43.19581993418956
+    ], 
+    "id": 15, 
+    "name": "R. S\u00e3o Clemente x Consulado Portugu\u00eas"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96125653103141, 
+      -43.21293948716097
+    ], 
+    "id": 16, 
+    "name": "R. Jardim Bot\u00e2nico pr\u00f3ximo ao Parque Lage"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96302063473692, 
+      -43.20444617315494
+    ], 
+    "id": 17, 
+    "name": "Av. Borges de Medeiros x Av. Epit\u00e1cio Pessoa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97690185493086, 
+      -43.21907973652049
+    ], 
+    "id": 18, 
+    "name": "R. M\u00e1rio Ribeiro x Av. Borges de Medeiros"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95440530969476, 
+      -43.19294778581997
+    ], 
+    "id": 19, 
+    "name": "R. Volunt\u00e1rios da P\u00e1tria x R. Real Grandeza"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.94246735188772, 
+      -43.1781550595977
+    ], 
+    "id": 20, 
+    "name": "Aterro x Av. Oswaldo Cruz"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9109185013799, 
+      -43.21387385747917
+    ], 
+    "id": 21, 
+    "name": "Pra\u00e7a da Bandeira"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91017700713483, 
+      -43.23360514260801
+    ], 
+    "id": 22, 
+    "name": "Av. Pres. Castelo Branco x R. Radialista Waldir Amaral"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96390579549468, 
+      -43.17850450056203
+    ], 
+    "id": 23, 
+    "name": "R. Barata Ribeiro x R. Duvivier"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96511670703609, 
+      -43.17694358213856
+    ], 
+    "id": 24, 
+    "name": "Av. Nossa Sra. de Copacabana (Lido"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96496658451942, 
+      -43.17358836920607
+    ], 
+    "id": 25, 
+    "name": "Av. Atl\u00e2ntica x Av. Princesa Isabel"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97186693923882, 
+      -43.18462822449235
+    ], 
+    "id": 26, 
+    "name": "Av. Atl\u00e2ntica x R. Figueiredo de Magalh\u00e3es"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97162058938228, 
+      -43.18742973744644
+    ], 
+    "id": 27, 
+    "name": "Av. N. Sra. de Copacabana x R. Sta. Clara"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98433522601597, 
+      -43.1894734688709
+    ], 
+    "id": 28, 
+    "name": "Av. Atl\u00e2ntica x R. Rainha Elisabeth"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97651463615115, 
+      -43.19413485028007
+    ], 
+    "id": 29, 
+    "name": "Corte do Cantagalo, P\u00e7a. Eug\u00eanio Jardim"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98698527029121, 
+      -43.19072724716396
+    ], 
+    "id": 30, 
+    "name": "R. Raul Pomp\u00e9ia x R. Francisco Otaviano"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98689237783159, 
+      -43.19778639546453
+    ], 
+    "id": 31, 
+    "name": "Av. Vieira Souto x R. Rainha Elizabeth"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98072300985837, 
+      -43.20714770397283
+    ], 
+    "id": 32, 
+    "name": "Av. Epit\u00e1cio Pessoa x R. Maria Quit\u00e9ria"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98706780415776, 
+      -43.22237411008304
+    ], 
+    "id": 33, 
+    "name": "Av. Delfim Moreira x R. Bartolomeu Mitre"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98483035125709, 
+      -43.19518302575936
+    ], 
+    "id": 34, 
+    "name": "R. Visconde de Piraj\u00e1 x R. Gomes Carneiro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97288097462576, 
+      -43.19078271184312
+    ], 
+    "id": 35, 
+    "name": "R. Barata Ribeiro x R. Constante Ramos"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91028088558068, 
+      -43.20930273037668
+    ], 
+    "id": 36, 
+    "name": "Trevo das For\u00e7as Armadas"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90667499760675, 
+      -43.20966014539746
+    ], 
+    "id": 37, 
+    "name": "Av. Francisco Bicalho x R. Francisco Eug\u00eanio"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89597821521173, 
+      -43.20309931683239
+    ], 
+    "id": 38, 
+    "name": "Av. Rodrigues Alves x R. Prof. Pereira Reis"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91011467502644, 
+      -43.17172299153927
+    ], 
+    "id": 39, 
+    "name": "Av. Pres. Antonio Carlos x Av. Franklin Roosevelt"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90698445229283, 
+      -43.18205095828349
+    ], 
+    "id": 40, 
+    "name": "Pra\u00e7a Tiradentes"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9136279310366, 
+      -43.17880692202058
+    ], 
+    "id": 41, 
+    "name": "Lapa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.93324134254025, 
+      -43.17467322847492
+    ], 
+    "id": 42, 
+    "name": "R. Praia do Flamengo x R. Bar\u00e3o do Flamengo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95751080403317, 
+      -43.19906542124956
+    ], 
+    "id": 43, 
+    "name": "R. Humait\u00e1 x R. Macedo Sobrinho"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96639025177228, 
+      -43.21949150711684
+    ], 
+    "id": 44, 
+    "name": "R. Jardim Bot\u00e2nico x R. Pacheco Le\u00e3o"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9784877623577, 
+      -43.22666756977116
+    ], 
+    "id": 45, 
+    "name": "Pra\u00e7a Sib\u00e9lius"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95050948385522, 
+      -43.18160510541455
+    ], 
+    "id": 46, 
+    "name": "R. Volunt\u00e1rios da P\u00e1tria x R. Praia de Botafogo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95558169411524, 
+      -43.17813719283912
+    ], 
+    "id": 47, 
+    "name": "Av. Lauro Sodr\u00e9 x R. Venceslau Br\u00e1s"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91506681737971, 
+      -43.22891684381392
+    ], 
+    "id": 48, 
+    "name": "Av. Maracan\u00e3 x R. Eurico Rabelo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96832054682515, 
+      -43.18532936946851
+    ], 
+    "id": 49, 
+    "name": "R.Barata Ribeiro x R. Siqueira Campos"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97994481666611, 
+      -43.19118568377002
+    ], 
+    "id": 50, 
+    "name": "Av. N. Sra. de Copacabana x R. Alm. Gon\u00e7alves"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98405928658085, 
+      -43.20722656315408
+    ], 
+    "id": 51, 
+    "name": "R. Visconde de Piraj\u00e1 x R. Maria Quit\u00e9ria"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.98377218726844, 
+      -43.21803806748509
+    ], 
+    "id": 52, 
+    "name": "R. Ataulfo de Paiva x R. Afr\u00e2nio de Melo Franco"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91137533249473, 
+      -43.17334078731119
+    ], 
+    "id": 53, 
+    "name": "Av. Presidente Wilson x Consulado EUA"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97330890803134, 
+      -43.3858633652913
+    ], 
+    "id": 54, 
+    "name": "Av. Embaixador Abelardo Bueno x Estr. Cel. Pedro Correa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92326273116473, 
+      -43.3738618764467
+    ], 
+    "id": 55, 
+    "name": "Pra\u00e7a da Taquara"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97354602557205, 
+      -43.36409649181145
+    ], 
+    "id": 57, 
+    "name": "Av. Ayrton Senna x R. Abelardo Bueno"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9848248958956, 
+      -43.36572568582696
+    ], 
+    "id": 58, 
+    "name": "Av. Ayrton Senna x Av.Via Parque"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.99562359110144, 
+      -43.36588300920909
+    ], 
+    "id": 59, 
+    "name": "Av. Ayrton Senna x Hospital Louren\u00e7o Jorge"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.01077707813266, 
+      -43.36597402937766
+    ], 
+    "id": 60, 
+    "name": "Av. Ayrton Senna x Av. L\u00facio Costa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.0108461915955, 
+      -43.33169013121952
+    ], 
+    "id": 61, 
+    "name": "Av. Sernanbetiba x Ponte L\u00facio Costa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.01297646697008, 
+      -43.31832957568742
+    ], 
+    "id": 62, 
+    "name": "Av. sernambetiba x Pra\u00e7a do O"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00020877196599, 
+      -43.35440414622293
+    ], 
+    "id": 63, 
+    "name": "Av. das Am\u00e9ricas x R. Felicissimo Cardoso"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00082399774238, 
+      -43.33144499978521
+    ], 
+    "id": 64, 
+    "name": "Av. das Am\u00e9ricas (Supermercado Extra"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00330377252899, 
+      -43.32391951513229
+    ], 
+    "id": 65, 
+    "name": "Av. das Am\u00e9ricas x Ponte L\u00facio Costa"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00751363373257, 
+      -43.30447355754009
+    ], 
+    "id": 66, 
+    "name": "R. Armando Lombardi x Av. Min. Ivan Lins"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.99999274875538, 
+      -43.2692056989632
+    ], 
+    "id": 67, 
+    "name": "Praia de S\u00e3o Conrado"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.99651372421793, 
+      -43.26042706362747
+    ], 
+    "id": 68, 
+    "name": "Auto-estrada Lagoa-Barra em frente shoping Fashion Mall"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91016683780691, 
+      -43.22163032432973
+    ], 
+    "id": 69, 
+    "name": "Av. Pres. Castelo Branco x R. General Canabarro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92408945640819, 
+      -43.23624077234685
+    ], 
+    "id": 70, 
+    "name": "R. Pereira Nunes x R. Bar\u00e3o de Mesquita"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92076525412259, 
+      -43.22266119358985
+    ], 
+    "id": 71, 
+    "name": "R. S\u00e3o Francisco Xavier x R. Heitor Beltr\u00e3o"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.93270290613072, 
+      -43.24121653423314
+    ], 
+    "id": 72, 
+    "name": "R. Conde de Bonfim x R. Uruguai"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92466932845364, 
+      -43.23354697373204
+    ], 
+    "id": 73, 
+    "name": "R. Conde de Bonfim x R. General Rocca"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91366943440151, 
+      -43.23568986761947
+    ], 
+    "id": 74, 
+    "name": "Boulevard 28 de Setembro x R. S\u00e3o Francisco Xavier"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92227488635016, 
+      -43.24767924311956
+    ], 
+    "id": 75, 
+    "name": "R. Uruguai x R. Maxwell"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91836959410903, 
+      -43.23214298195905
+    ], 
+    "id": 76, 
+    "name": "Av. Maracan\u00e3 x R. Deputado Soares Filho"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91859982762022, 
+      -43.25104217345745
+    ], 
+    "id": 77, 
+    "name": "R. Teodoro da Silva x R. Bar\u00e3o de S\u00e3o Francisco"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90861129591687, 
+      -43.23837432032994
+    ], 
+    "id": 78, 
+    "name": "Av. Pres. Castelo Branco x R. S\u00e3o Francisco Xavier"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92019692460096, 
+      -43.25965954910859
+    ], 
+    "id": 79, 
+    "name": "R. Teodoro da Silva x R. Bar\u00e3o Bom Retiro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90513601831731, 
+      -43.26989575584037
+    ], 
+    "id": 80, 
+    "name": "Av. Marechal Rondom x R. Bar\u00e3o do Bom Retiro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90272449903189, 
+      -43.26770540321635
+    ], 
+    "id": 81, 
+    "name": "R. Vinte Quatro de Maio x R. Bela Vista"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90236735257468, 
+      -43.27757271685293
+    ], 
+    "id": 82, 
+    "name": "R. 24 de Maio x R. C\u00f4nego Tobias"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89525213339183, 
+      -43.29571308674147
+    ], 
+    "id": 83, 
+    "name": "R. Arquias Cordeiro x R. Jos\u00e9 dos Reis (Engenh\u00e3o"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89925487128244, 
+      -43.2441784207297
+    ], 
+    "id": 84, 
+    "name": "R. Ana N\u00e9ri x R. Lic\u00ednio Cardoso"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90210136831016, 
+      -43.28035277173376
+    ], 
+    "id": 85, 
+    "name": "R. Dias da Cruz x R. Hermengarda"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90523567146776, 
+      -43.29285216926945
+    ], 
+    "id": 86, 
+    "name": "R. Dias da Cruz x R. Maranh\u00e3o"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89727755004869, 
+      -43.28572666341995
+    ], 
+    "id": 87, 
+    "name": "R. Amaro Cavalcanti x Viaduto Todos os Santos"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89933591501335, 
+      -43.27854211198849
+    ], 
+    "id": 88, 
+    "name": "R. Aristides Caire x R. Santa F\u00e9"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88349088911257, 
+      -43.29171490898198
+    ], 
+    "id": 89, 
+    "name": "Av. Dom Helder C\u00e2mara x Viaduto de Pilares"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88757886783342, 
+      -43.28518137571096
+    ], 
+    "id": 90, 
+    "name": "Av. Dom Helder C\u00e2mara x R. Gandavo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88964657153261, 
+      -43.2438465466067
+    ], 
+    "id": 91, 
+    "name": "Av. Dom Helder C\u00e2mara x R. Leopoldo Bulh\u00f5es"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88734105459711, 
+      -43.23074255109709
+    ], 
+    "id": 92, 
+    "name": "Av. Brasil, altura de Benfica"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.8929881108236, 
+      -43.23954575166017
+    ], 
+    "id": 93, 
+    "name": "R. Sen. Bernardo Monteiro x R. S\u00e3o Luis Gonzaga"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90028968226026, 
+      -43.22534805959068
+    ], 
+    "id": 94, 
+    "name": "Largo da Cancela, R. S. Luis Gonzaga x R. Jo\u00e3o Ricardo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.93908964295887, 
+      -43.18324386409122
+    ], 
+    "id": 95, 
+    "name": "R. Pinheiro Machado, altura da R. Carlos de Campos"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.933196, 
+      -43.184628
+    ], 
+    "id": 96, 
+    "name": "R. Pinheiro Machado, altura da R. das Laranjeiras"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.93456790348044, 
+      -43.18453913670954
+    ], 
+    "id": 97, 
+    "name": "Viaduto Eng. Noronha, sob Viaduto Jardel Filho"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91963173039738, 
+      -43.19417499368038
+    ], 
+    "id": 98, 
+    "name": "Av. 31 de Mar\u00e7o, sa\u00edda do T\u00fanel Santa B\u00e1rbara"
+  }, 
+  {
+    "status": false, 
+    "geo": [
+      -22.91405, 
+      -43.195083
+    ], 
+    "id": 99, 
+    "name": "Av. 31 de Mar\u00e7o, pra\u00e7a da Apoteose, pr\u00f3ximo. \u00e0 R. Frei Caneca"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.911718, 
+      -43.196025
+    ], 
+    "id": 100, 
+    "name": "Av. 31 de Mar\u00e7o, altura da Av. Salvador de S\u00e1"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.907532, 
+      -43.197268
+    ], 
+    "id": 101, 
+    "name": "Av. 31 de Mar\u00e7o, altura da Av. Presidente Vargas"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90644808718989, 
+      -43.21302673072304
+    ], 
+    "id": 102, 
+    "name": "Vias Elevadas Prof. Eng. Rufino de Almeida, altura Leopoldina, pista inferior"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89727756591557, 
+      -43.21811281586924
+    ], 
+    "id": 103, 
+    "name": "Linha Vermelha, Km 0"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90587423265613, 
+      -43.21410743349825
+    ], 
+    "id": 104, 
+    "name": "Vias Elevadas Prof. Eng. Rufino de Almeida, altura Leopoldina, pista superior"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9156809828916, 
+      -43.21023289070063
+    ], 
+    "id": 105, 
+    "name": "Elevado Eng. Freyssinet, pr\u00f3ximo R. Jo\u00e3o Paulo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.900072, 
+      -43.175715
+    ], 
+    "id": 106, 
+    "name": "Elevado da Perimetral, descida para Av. Presidente Vargas"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90436919267985, 
+      -43.17127865845743
+    ], 
+    "id": 107, 
+    "name": "Alfredo Agache, ENTRADA do Mergulh\u00e3o, sentido Brasil"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.911078, 
+      -43.168378
+    ], 
+    "id": 108, 
+    "name": "Av. General Justo, pr\u00f3ximo ao Aeroporto Santos Dumont"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.905549, 
+      -43.168591
+    ], 
+    "id": 109, 
+    "name": "Elevado da Perimetral, altura da Av. Gal. Justo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90469015212671, 
+      -43.17116486104693
+    ], 
+    "id": 110, 
+    "name": "Alfredo Agache, SA\u00cdDA do Mergulh\u00e3o, sentido Aterro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.95000059932707, 
+      -43.177673980221
+    ], 
+    "id": 111, 
+    "name": "Av. Venceslau Br\u00e1s, pr\u00f3ximo ao GMAR"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96029035605935, 
+      -43.20409561037524
+    ], 
+    "id": 112, 
+    "name": "Viaduto Saint Hilaire, sa\u00edda do T\u00fanel Rebou\u00e7as, sobre a Rua Jardim Bot\u00e2nico"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.963085, 
+      -43.212512
+    ], 
+    "id": 113, 
+    "name": "Av. Borges de Medeiros, altura da Av. Lineu de Paula Machado"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96485, 
+      -43.21552
+    ], 
+    "id": 114, 
+    "name": "Av. Borges de  Medeiros, altura da R. J. J. Seabra"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.967411, 
+      -43.217295
+    ], 
+    "id": 115, 
+    "name": "Av. Borges de  Medeiros, altura da R. Gal. Garzon"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.980392, 
+      -43.214439
+    ], 
+    "id": 116, 
+    "name": "Av. Epit\u00e1cio Pessoa, pr\u00f3ximo ao Jardim de Alah"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.97440025398375, 
+      -43.22614743278478
+    ], 
+    "id": 117, 
+    "name": "R. Jardim Bot\u00e2nico, altura da Pra\u00e7a Santos Dumont"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.976344, 
+      -43.198633
+    ], 
+    "id": 118, 
+    "name": "Av. Epit\u00e1cio Pessoa, pr\u00f3ximo ao Corte do Cantagalo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.972396, 
+      -43.203072
+    ], 
+    "id": 119, 
+    "name": "Av. Epit\u00e1cio Pessoa, pr\u00f3ximo ao Parque da Catacumba"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.998735, 
+      -43.26893
+    ], 
+    "id": 122, 
+    "name": "Auto Estrada / Estr. do Jo\u00e1, Pr\u00f3ximo ao T\u00fanel de S\u00e3o Conrado"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00254435302362, 
+      -43.27553063214106
+    ], 
+    "id": 123, 
+    "name": "Auto Estrada, alt. T\u00fanel de S\u00e3o Conrado"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00926958749523, 
+      -43.28672529264539
+    ], 
+    "id": 125, 
+    "name": "Elevado das Bandeiras, pista superior, entre os t\u00faneis S\u00e3o Conrado e Jo\u00e1"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.01241502315131, 
+      -43.29312808616189
+    ], 
+    "id": 126, 
+    "name": "Auto Estrada Lagoa-Barra, pr\u00f3ximo \u00e0 R. Maria Luiza Pitanga"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00683630313763, 
+      -43.30724101487809
+    ], 
+    "id": 127, 
+    "name": "Av. Armando Lombardi, acesso Barra Point"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.001383, 
+      -43.329437
+    ], 
+    "id": 129, 
+    "name": "Av. das Am\u00e9ricas, pr\u00f3ximo ao n\u00ba 2211, Hotel Dunas"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.99997, 
+      -43.34559
+    ], 
+    "id": 130, 
+    "name": "Av. das Am\u00e9ricas, Pr\u00f3ximo ao n\u00b0 3434, Centro Empresarial M\u00e1rio Henrique Simonsem"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9998858344547, 
+      -43.35456903204024
+    ], 
+    "id": 131, 
+    "name": "Av. das Am\u00e9ricas, Altura da Av. Luis Carlos Prestes"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00015, 
+      -43.36971
+    ], 
+    "id": 132, 
+    "name": "Av. das Am\u00e9ricas, altura da Av. Ayrton Senna, sobre o Cebol\u00e3o"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.00040512100952, 
+      -43.34732634065778
+    ], 
+    "id": 133, 
+    "name": "Av. das Am\u00e9ricas x R. Jornalista Ricardo Marinho"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -23.003449, 
+      -43.324206
+    ], 
+    "id": 134, 
+    "name": "Av. das Am\u00e9ricas, altura da A. Afonso Arinos de Mello Franco, EuroBarra"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.9572120191359, 
+      -43.35678889858742
+    ], 
+    "id": 135, 
+    "name": "Av. Ayrton Senna, subida da Linha Amarela"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.96535672036598, 
+      -43.35702180353719
+    ], 
+    "id": 136, 
+    "name": "Av. Ayrton Senna, pr\u00f3ximo ao SENAC"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89562275086694, 
+      -43.21493632907509
+    ], 
+    "id": 139, 
+    "name": "Av. Brasil, altura da R. Eduardo Luiz Lopes"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.92741412251, 
+      -43.20947356272415
+    ], 
+    "id": 140, 
+    "name": "Elevado Eng. Freyssinet, pr\u00f3ximo ao T\u00fanel Rebou\u00e7as"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.90836702552952, 
+      -43.23605961370099
+    ], 
+    "id": 142, 
+    "name": "R. Visconde de Niter\u00f3i, altura Mangueira"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89958656429618, 
+      -43.20137985085237
+    ], 
+    "id": 143, 
+    "name": "Pra\u00e7a Santo Cristo, antes da Igreja, sentido Rodrigues Alves"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.87186899674012, 
+      -43.24610510829785
+    ], 
+    "id": 144, 
+    "name": "Av. Brasil, altura da Linha Amarela"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.86446666666667, 
+      -43.24816666666667
+    ], 
+    "id": 146, 
+    "name": "Av. Brasil, altura R. Paris"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.84778888636239, 
+      -43.24699411192562
+    ], 
+    "id": 147, 
+    "name": "Av. Brasil, entrada da Ilha"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.91136665149479, 
+      -43.20613013199533
+    ], 
+    "id": 150, 
+    "name": "Pr\u00e9dio Prefeitura - CASS"
+  }, 
+  {
+    "status": false, 
+    "geo": [
+      -22.82898747253351, 
+      -43.34600527660817
+    ], 
+    "id": 152, 
+    "name": "Av. Brasil, altura Av. Autom\u00f3vel Clube"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.83678108013206, 
+      -43.36411793452997
+    ], 
+    "id": 153, 
+    "name": "Av. Brasil, altura da R. Jo\u00e3o Paulo"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.852568, 
+      -43.392457
+    ], 
+    "id": 154, 
+    "name": "Av. Brasil, altura de Deodoro"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.85503244531104, 
+      -43.48341791449046
+    ], 
+    "id": 156, 
+    "name": "Av. Brasil x Estr. do Quaf\u00e1"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.86119456504532, 
+      -43.54110796916321
+    ], 
+    "id": 157, 
+    "name": "Av. Brasil, altura Km 42 - Mendanha"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.89038620335103, 
+      -43.22316553082597
+    ], 
+    "id": 161, 
+    "name": "Linha Vermelha - Km 1, pista superior"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88528429719772, 
+      -43.22647760175497
+    ], 
+    "id": 169, 
+    "name": "Av. Brasil, altura da Linha Vermelha"
+  }, 
+  {
+    "status": true, 
+    "geo": [
+      -22.88879070381672, 
+      -43.21861200599965
+    ], 
+    "id": 170, 
+    "name": "Av. Brasil, altura do Cemit\u00e9rio do Caju"
+  }
+]
