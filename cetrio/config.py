@@ -19,4 +19,5 @@ def create_dir(name):
 
 create_dir(config.get('cache', 'dir'))
 create_dir(config.get('thumbnail', 'dir'))
+create_dir(config.get('log', 'dir'))
 

@@ -19,8 +19,8 @@ import noxml
 from config import config
 
 data = {}
-run_timeout = 10
-reload_timeout = 1
+run_timeout = int(config.get('ffmpeg', 'timeout'))
+reload_timeout = int(config.get('ffmpeg', 'reload'))
 
 in_stream = '{0}{1}/{2} {3}'.format(
     config.get('remote-rtmp-server', 'addr'),
@@ -118,32 +118,53 @@ class Camera(object):
 
 
 def make_cmd(num):
+    """ Generate FFmpeg command to fetch video from
+        remote source.
+    """
     inp = config.get('ffmpeg', 'input_opt')
     out = config.get('ffmpeg', 'output_opt')
 
     args = [config.get('ffmpeg', 'bin')]
     args += shlex.split(inp)
+    args += ['-probesize', config.get('ffmpeg', 'probe')]
     args += ['-i',  in_stream.format(num)]
     args += shlex.split(out)
     args.append(out_stream.format(num))
     return args
 
 
-def run_proc(num):
-    cmd = make_cmd(num)
+def make_thumb_cmd(num):
+    """ Generate FFmpeg command for thumbnail generation.
+    """
+    args = [config.get('ffmpeg', 'bin')]
+    args += ['-probesize', config.get('ffmpeg', 'probe')]
+    args += ['-i', in_stream.format(num)]
+    args += shlex.split(config.get('thumbnail', 'opt'))
+    out = os.path.join(
+        config.get('thumbnail', 'dir'),
+        '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
+    )
+    args.append(out)
+    return args
+
+
+def run_proc(num, cmd_maker, mode):
+    cmd = cmd_maker(num)
     #print(cmd, ''.join(cmd), sep='\n')
     print('Starting FFmpeg')
-    with open('/tmp/ffmpeg-{0}'.format(num),'w') as f:
+
+    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, num))
+    with open(log, 'w') as f:
         return subprocess.Popen(cmd, 
-                            stdout=subprocess.PIPE,
-                            stderr=f)
+                                stdout=subprocess.PIPE,
+                                stderr=f)
 
 
 def start(num, data, increment=1):
     try:
         camera = data[num]
     except KeyError:
-        camera = Camera(lambda: run_proc(num))
+        camera = Camera(lambda: run_proc(num, make_cmd, 'fetch'))
         data[num] = camera
 
     if not camera.proc and not camera.run:
