@@ -17,6 +17,7 @@ except ImportError:
 
 import noxml
 from config import config
+import cameras
 
 data = {}
 run_timeout = int(config.get('ffmpeg', 'timeout'))
@@ -135,19 +136,79 @@ def make_cmd(num):
     return args
 
 
-def make_thumb_cmd(num):
+def make_thumb_cmd(num, source=None):
     """ Generate FFmpeg command for thumbnail generation.
     """
+    inp = config.get('thumbnail', 'input_opt')
+    out = config.get('thumbnail', 'output_opt')
+
     args = [config.get('ffmpeg', 'bin')]
+    args += shlex.split(inp)
     args += ['-probesize', config.get('ffmpeg', 'probe')]
-    args += ['-i', in_stream.format(num)]
-    args += shlex.split(config.get('thumbnail', 'opt'))
+    if source is None:
+        source = in_stream
+    args += ['-i', source.format(num)]
+    args += shlex.split(out)
     out = os.path.join(
         config.get('thumbnail', 'dir'),
         '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
     )
     args.append(out)
     return args
+
+
+def start_thumbnail_download():
+    cam_list = [x['id'] for x in cameras.get_cameras()]
+    interval = int(config.get('thumbnail', 'interval'))
+
+
+    class WorkerThread(threading.Thread):
+        def __init__(self, id):
+            super(WorkerThread, self).__init__()
+            self.id = str(id)
+            self.proc = None
+
+        def run(self):
+            source = in_stream
+            try:
+                # Use local connection if camera is already running
+                if data[self.id].run:
+                    source = out_stream
+            except Exception:
+                pass
+
+            self.proc = run_proc(self.id, lambda x: make_thumb_cmd(x, source), 'thumb')
+            self.proc.communicate()
+
+    def main_worker():
+        while True:
+            ths = []
+            for x in cam_list:
+                th = WorkerThread(x)
+                th.daemon = True
+                th.start()
+                ths.append(th)
+        
+            time.sleep(interval * .75)
+            error = []
+            for th in ths:
+                while not th.proc:
+                    print('No proc on ' + th.id)
+                    sleep(0.1)
+                if th.proc.poll() is None:
+                    error.append(th.id)
+                    th.proc.kill()
+                th.proc.wait()
+            ok = len(ths) - len(error)
+            print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
+            print('Could not fetch:\n' + ', '.join(error))
+            ths = []
+
+            time.sleep(interval * .25)
+
+    main_th = threading.Thread(target=main_worker)
+    main_th.daemon = True
+    main_th.start()
 
 
 def run_proc(num, cmd_maker, mode):
@@ -228,6 +289,7 @@ def initialize_from_stats():
 if __name__ == '__main__':
 
     initialize_from_stats()
+    start_thumbnail_download()
 
     host = config.get('local', 'addr')
     port = int(config.get('local', 'port'))
