@@ -78,6 +78,7 @@ class Camera(object):
         def worker():
             self.run = True
             self.proc = self.fn()
+            print('Starting FFmpeg')
             
             while True:
                 self.proc.wait()
@@ -88,11 +89,12 @@ class Camera(object):
                     if self.run:
                         # It might be killed after waiting
                         self.proc = self.fn()
+                        print('Restarting FFmpeg')
                         continue
                 break
 
         self.thread = threading.Thread(target=worker)
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
 
     def stop(self):
@@ -113,7 +115,7 @@ class Camera(object):
                 self.run = True
 
         thread = threading.Thread(target=stop_worker)
-        thread.setDaemon(True)
+        thread.daemon = True
         thread.start()
 
 
@@ -151,7 +153,7 @@ def make_thumb_cmd(num):
 def run_proc(num, cmd_maker, mode):
     cmd = cmd_maker(num)
     #print(cmd, ''.join(cmd), sep='\n')
-    print('Starting FFmpeg')
+    #print('Starting FFmpeg')
 
     log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, num))
     with open(log, 'w') as f:
@@ -206,11 +208,8 @@ def initialize_from_stats():
         raise NameError('No app named %r' % app)
 
     # App clients
-    nclients = int(app['nclients'])
-    if not nclients:
-        return
     streams = app['stream']
-    if nclients == 1:
+    if isinstance(streams, dict):
         streams = [streams]
 
     for stream in streams:
