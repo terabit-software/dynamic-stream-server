@@ -15,9 +15,9 @@ except ImportError:
     import urlparse
     from urllib2 import urlopen
 
-import noxml
-from config import config
-import cameras
+from . import noxml
+from .config import config
+from . import cameras
 
 data = {}
 run_timeout = int(config.get('ffmpeg', 'timeout'))
@@ -31,8 +31,8 @@ in_stream = '{0}{1}/{2} {3}'.format(
 )
 
 out_stream = '{0}{1}/'.format(
-	config.get('rtmp-server', 'addr'),
-	config.get('rtmp-server', 'app')
+    config.get('rtmp-server', 'addr'),
+    config.get('rtmp-server', 'app')
 ) + '{0}'
 
 
@@ -159,6 +159,7 @@ def make_thumb_cmd(num, source=None):
 
 def start_thumbnail_download():
     cam_list = [x['id'] for x in cameras.get_cameras()]
+    #cam_list = [91]
     interval = int(config.get('thumbnail', 'interval'))
 
 
@@ -192,13 +193,11 @@ def start_thumbnail_download():
             time.sleep(interval * .75)
             error = []
             for th in ths:
-                while not th.proc:
-                    print('No proc on ' + th.id)
-                    sleep(0.1)
                 if th.proc.poll() is None:
                     error.append(th.id)
                     th.proc.kill()
                 th.proc.wait()
+                #print(th.id, th.proc.poll())
             ok = len(ths) - len(error)
             print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
             print('Could not fetch:\n' + ', '.join(error))
@@ -269,7 +268,9 @@ def initialize_from_stats():
         raise NameError('No app named %r' % app)
 
     # App clients
-    streams = app['stream']
+    streams = app.get('stream')
+    if streams is None:
+        return
     if isinstance(streams, dict):
         streams = [streams]
 
@@ -289,7 +290,7 @@ def initialize_from_stats():
 if __name__ == '__main__':
 
     initialize_from_stats()
-    start_thumbnail_download()
+    #start_thumbnail_download()
 
     host = config.get('local', 'addr')
     port = int(config.get('local', 'port'))
