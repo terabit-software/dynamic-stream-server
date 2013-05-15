@@ -15,9 +15,9 @@ except ImportError:
     import urlparse
     from urllib2 import urlopen
 
-from . import noxml
-from .config import config
-from . import cameras
+import noxml
+from config import config
+import cameras
 
 data = {}
 run_timeout = int(config.get('ffmpeg', 'timeout'))
@@ -98,20 +98,31 @@ class Camera(object):
         self.thread.daemon = True
         self.thread.start()
 
-    def stop(self):
+    def _kill(self):
+        """ Kill the FFmpeg process. Don't call this function directly,
+            otherwise the process may be restarted. Call `stop` instead.
+        """
+        try:
+            self.proc.kill()
+            self.proc.wait()
+        except OSError:
+            pass
+        finally:
+            self.proc = None
+
+    def stop(self, now=False):
         if not self.run:
             return
         self.run = False
 
+        if now:
+            self._kill()
+            return
+
         def stop_worker():
             time.sleep(self.timeout)
             if not self.cnt:
-                try:
-                    self.proc.kill()
-                    self.proc.wait()
-                except OSError:
-                    pass
-                self.proc = None
+                self._kill()
             else:
                 self.run = True
 
@@ -157,19 +168,49 @@ def make_thumb_cmd(num, source=None):
     return args
 
 
+class LockSleepThread(threading.Thread):
+    def __init__(self, seconds, lock):
+        super(LockSleepThread, self).__init__()
+        self.seconds = seconds
+        self.lock = lock
+        self.lock.acquire()
+        self.daemon = True
+
+    def run(self):
+        time.sleep(self.seconds)
+        try:
+            self.lock.release()
+        except Exception:
+            pass
+
+
+def lock_sleep(seconds, lock):
+    LockSleepThread(seconds, lock).start()
+    lock.acquire()
+    try:
+        lock.release()
+    except Exception:
+        pass
+
+
+THUMBNAIL_RUN = True
+THUMBNAIL_LOCK = threading.Lock()
+THUMBNAIL_CLEANUP = False
+
 def start_thumbnail_download():
     cam_list = [x['id'] for x in cameras.get_cameras()]
-    #cam_list = [91]
     interval = int(config.get('thumbnail', 'interval'))
-
 
     class WorkerThread(threading.Thread):
         def __init__(self, id):
             super(WorkerThread, self).__init__()
             self.id = str(id)
-            self.proc = None
+            self.proc = self._open_proc()
+            self.daemon = True
 
-        def run(self):
+        def _open_proc(self):
+            """ Select stream and open process
+            """
             source = in_stream
             try:
                 # Use local connection if camera is already running
@@ -178,32 +219,47 @@ def start_thumbnail_download():
             except Exception:
                 pass
 
-            self.proc = run_proc(self.id, lambda x: make_thumb_cmd(x, source), 'thumb')
+            return run_proc(self.id, lambda x: make_thumb_cmd(x, source), 'thumb')
+
+        def run(self):
+            """ Wait until the end of the process.
+            """
             self.proc.communicate()
 
     def main_worker():
+        global THUMBNAIL_CLEANUP
         while True:
+            if not THUMBNAIL_RUN:
+                break
+            THUMBNAIL_CLEANUP = False
             ths = []
             for x in cam_list:
                 th = WorkerThread(x)
-                th.daemon = True
                 th.start()
                 ths.append(th)
         
-            time.sleep(interval * .75)
+            lock_sleep(interval * .75, THUMBNAIL_LOCK)
             error = []
             for th in ths:
                 if th.proc.poll() is None:
                     error.append(th.id)
-                    th.proc.kill()
+                    try:
+                        th.proc.kill()
+                    except OSError:
+                        pass
                 th.proc.wait()
-                #print(th.id, th.proc.poll())
             ok = len(ths) - len(error)
-            print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
-            print('Could not fetch:\n' + ', '.join(error))
-            ths = []
 
-            time.sleep(interval * .25)
+            if THUMBNAIL_RUN: # Show stats
+                print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
+                if ok != len(ths):
+                    print('Could not fetch:\n' + ', '.join(error))
+
+            THUMBNAIL_CLEANUP = True
+
+            if not THUMBNAIL_RUN:
+                break
+            lock_sleep(interval * .25, THUMBNAIL_LOCK)
 
     main_th = threading.Thread(target=main_worker)
     main_th.daemon = True
@@ -246,18 +302,6 @@ def stop(num, data):
     print(data)
 
 
-class Handler(server.BaseHTTPRequestHandler):
-    def do_GET(self):
-        info = urlparse.urlparse(self.path)
-        id, action = info.path.strip('/').split('/')
-        if action == 'start':
-            start(id, data)
-        else:
-            stop(id, data)
-
-    do_POST = do_GET
-
-
 def initialize_from_stats():
     stats = get_stats()['server']['application']
     if isinstance(stats, dict): stats = [stats]
@@ -285,31 +329,3 @@ def initialize_from_stats():
             continue
 
         start(stream['name'], data, nclients)
-
-
-if __name__ == '__main__':
-
-    initialize_from_stats()
-    #start_thumbnail_download()
-
-    host = config.get('local', 'addr')
-    port = int(config.get('local', 'port'))
-
-    socketserver.TCPServer.allow_reuse_address = True
-    ss = None
-    while True:
-        try:
-            ss = socketserver.TCPServer((host, port), Handler)
-        except IOError:
-            print('Waiting TCP port to be used.')
-            time.sleep(run_timeout)
-        else:
-            print('Connected to %s:%s' % (host, port))
-            break
-
-    try:
-        ss.serve_forever()
-    except KeyboardInterrupt:
-        ss.server_close()
-        print('Server Closed')
-
