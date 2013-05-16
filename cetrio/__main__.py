@@ -36,19 +36,13 @@ def shutdown():
         cam.stop(now=True)
     print('Done!')
     print('Stopping thumbnail download...')
-    base.THUMBNAIL_RUN = False
-    try:
-        base.THUMBNAIL_LOCK.release()
-    except Exception:
-        pass
-    while not base.THUMBNAIL_CLEANUP:
-        time.sleep(0.1)
+    base.Thumbnail.stop_download()
     print('Done!')
 
 
 def main():
     base.initialize_from_stats()
-    base.start_thumbnail_download()
+    base.Thumbnail.start_download()
 
     host = config.get('local', 'addr')
     port = int(config.get('local', 'port'))

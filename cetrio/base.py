@@ -162,42 +162,17 @@ def make_thumb_cmd(num, source=None):
     return args
 
 
-class LockSleepThread(threading.Thread):
-    def __init__(self, seconds, lock):
-        super(LockSleepThread, self).__init__()
-        self.seconds = seconds
-        self.lock = lock
-        self.lock.acquire()
-        self.daemon = True
+class Thumbnail(object):
+    run = True
+    clean = True
+    lock = threading.Condition(threading.Lock())
 
-    def run(self):
-        time.sleep(self.seconds)
-        try:
-            self.lock.release()
-        except Exception:
-            pass
-
-
-def lock_sleep(seconds, lock):
-    LockSleepThread(seconds, lock).start()
-    lock.acquire()
-    try:
-        lock.release()
-    except Exception:
-        pass
-
-
-THUMBNAIL_RUN = True
-THUMBNAIL_LOCK = threading.Lock()
-THUMBNAIL_CLEANUP = False
-
-def start_thumbnail_download():
     cam_list = [x['id'] for x in cameras.get_cameras()]
     interval = int(config.get('thumbnail', 'interval'))
 
     class WorkerThread(threading.Thread):
         def __init__(self, id):
-            super(WorkerThread, self).__init__()
+            super(Thumbnail.WorkerThread, self).__init__()
             self.id = str(id)
             self.proc = self._open_proc()
             self.daemon = True
@@ -220,19 +195,22 @@ def start_thumbnail_download():
             """
             self.proc.communicate()
 
-    def main_worker():
-        global THUMBNAIL_CLEANUP
+    @classmethod
+    def main_worker(cls):
         while True:
-            if not THUMBNAIL_RUN:
+            if not cls:
                 break
-            THUMBNAIL_CLEANUP = False
+            cls.clean = False
+
             ths = []
-            for x in cam_list:
-                th = WorkerThread(x)
+            for x in cls.cam_list:
+                th = cls.WorkerThread(x)
                 th.start()
                 ths.append(th)
-        
-            lock_sleep(interval * .75, THUMBNAIL_LOCK)
+
+            with cls.lock:
+                cls.lock.wait(cls.interval * .75)
+
             error = []
             for th in ths:
                 if th.proc.poll() is None:
@@ -244,20 +222,34 @@ def start_thumbnail_download():
                 th.proc.wait()
             ok = len(ths) - len(error)
 
-            if THUMBNAIL_RUN: # Show stats
+            if cls.run: # Show stats
                 print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
                 if ok != len(ths):
                     print('Could not fetch:\n' + ', '.join(error))
 
-            THUMBNAIL_CLEANUP = True
+            with cls.lock:
+                cls.clean = True
+                cls.lock.notify_all()
 
-            if not THUMBNAIL_RUN:
+            if not cls.run:
                 break
-            lock_sleep(interval * .25, THUMBNAIL_LOCK)
 
-    main_th = threading.Thread(target=main_worker)
-    main_th.daemon = True
-    main_th.start()
+            with cls.lock:
+                cls.lock.wait(cls.interval * .75)
+
+    @classmethod
+    def start_download(cls):
+        main_th = threading.Thread(target=cls.main_worker)
+        main_th.daemon = True
+        main_th.start()
+
+    @classmethod
+    def stop_download(cls):
+        cls.run = False
+
+        with cls.lock:
+            cls.lock.notify_all()
+            cls.lock.wait_for(lambda: cls.clean)
 
 
 def run_proc(num, cmd_maker, mode):
