@@ -246,17 +246,18 @@ class Thumbnail(object):
     @classmethod
     def main_worker(cls):
         while True:
-            if not cls:
+            if not cls.run:
                 break
-            cls.clean = False
-
-            ths = []
-            for x in cls.cam_list:
-                th = cls.WorkerThread(x)
-                th.start()
-                ths.append(th)
 
             with cls.lock:
+                cls.clean = False
+
+                ths = []
+                for x in cls.cam_list:
+                    th = cls.WorkerThread(x)
+                    th.start()
+                    ths.append(th)
+
                 cls.lock.wait(cls.interval * .75)
 
             error = []
@@ -283,7 +284,7 @@ class Thumbnail(object):
                 break
 
             with cls.lock:
-                cls.lock.wait(cls.interval * .75)
+                cls.lock.wait(cls.interval * .25)
 
     @classmethod
     def make_cmd(cls, num, source=None):
