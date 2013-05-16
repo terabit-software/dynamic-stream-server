@@ -5,14 +5,8 @@ import os
 import shlex
 try:
     # Python 3
-    import socketserver
-    from http import server
-    import urllib.parse as urlparse
     from urllib.request import urlopen
 except ImportError:
-    import SocketServer as socketserver
-    import BaseHTTPServer as server
-    import urlparse
     from urllib2 import urlopen
 
 import noxml
