@@ -117,13 +117,14 @@ class Camera(object):
             self.proc = None
 
     def stop(self, now=False):
+        if now:
+            self.run = False
+            self._kill()
+            return
+
         if not self.run:
             return
         self.run = False
-
-        if now:
-            self._kill()
-            return
 
         def stop_worker():
             time.sleep(self.timeout)
@@ -261,7 +262,8 @@ class Thumbnail(object):
 
         with cls.lock:
             cls.lock.notify_all()
-            cls.lock.wait_for(lambda: cls.clean)
+            while not cls.clean:
+                cls.lock.wait()
 
 
 def start(num, data, increment=1):
