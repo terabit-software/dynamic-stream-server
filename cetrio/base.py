@@ -209,6 +209,11 @@ class Video(object):
 
             cls.start(stream['name'], nclients)
 
+    @classmethod
+    def terminate_cameras(cls):
+        for cam in cls.data.values():
+            cam.stop(now=True)
+
 
 class Thumbnail(object):
     run = True

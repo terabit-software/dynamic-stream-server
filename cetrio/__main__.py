@@ -32,8 +32,7 @@ class Handler(server.BaseHTTPRequestHandler):
 
 def shutdown():
     print('Stopping cameras...')
-    for cam in base.Video.data.values():
-        cam.stop(now=True)
+    base.Video.terminate_cameras()
     print('Done!')
     print('Stopping thumbnail download...')
     base.Thumbnail.stop_download()
