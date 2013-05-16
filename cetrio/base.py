@@ -14,8 +14,6 @@ from config import config
 import cameras
 
 data = {}
-run_timeout = int(config.get('ffmpeg', 'timeout'))
-reload_timeout = int(config.get('ffmpeg', 'reload'))
 
 in_stream = '{0}{1}/{2} {3}'.format(
     config.get('remote-rtmp-server', 'addr'),
@@ -23,6 +21,7 @@ in_stream = '{0}{1}/{2} {3}'.format(
     config.get('remote-rtmp-server', 'stream'),
     config.get('remote-rtmp-server', 'data'),
 )
+
 
 out_stream = '{0}{1}/'.format(
     config.get('rtmp-server', 'addr'),
@@ -37,7 +36,20 @@ def get_stats():
     return noxml.load(data)
 
 
+def run_proc(num, cmd_maker, mode):
+    cmd = cmd_maker(num)
+
+    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, num))
+    with open(log, 'w') as f:
+        return subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stderr=f)
+
+
 class Camera(object):
+    run_timeout = int(config.get('ffmpeg', 'timeout'))
+    reload_timeout = int(config.get('ffmpeg', 'reload'))
+
     def __init__(self, fn, timeout=run_timeout):
         self.lock = threading.Lock()
         self.fn = fn
@@ -80,7 +92,7 @@ class Camera(object):
                 print('FFmpeg from pid {0} died!'.format(self.proc and self.proc.pid))
                 self.proc = None
                 if self.run:
-                    time.sleep(reload_timeout)
+                    time.sleep(self.reload_timeout)
                     if self.run:
                         # It might be killed after waiting
                         self.proc = self.fn()
@@ -250,18 +262,6 @@ class Thumbnail(object):
         with cls.lock:
             cls.lock.notify_all()
             cls.lock.wait_for(lambda: cls.clean)
-
-
-def run_proc(num, cmd_maker, mode):
-    cmd = cmd_maker(num)
-    #print(cmd, ''.join(cmd), sep='\n')
-    #print('Starting FFmpeg')
-
-    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, num))
-    with open(log, 'w') as f:
-        return subprocess.Popen(cmd, 
-                                stdout=subprocess.PIPE,
-                                stderr=f)
 
 
 def start(num, data, increment=1):
