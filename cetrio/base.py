@@ -154,25 +154,6 @@ def make_cmd(num):
     return args
 
 
-def make_thumb_cmd(num, source=None):
-    """ Generate FFmpeg command for thumbnail generation.
-    """
-    inp = config.get('thumbnail', 'input_opt')
-    out = config.get('thumbnail', 'output_opt')
-
-    args = [config.get('ffmpeg', 'bin')]
-    args += shlex.split(inp)
-    args += ['-probesize', config.get('ffmpeg', 'probe')]
-    if source is None:
-        source = in_stream
-    args += ['-i', source.format(num)]
-    args += shlex.split(out)
-    out = os.path.join(
-        config.get('thumbnail', 'dir'),
-        '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
-    )
-    args.append(out)
-    return args
 
 
 class Thumbnail(object):
@@ -201,7 +182,7 @@ class Thumbnail(object):
             except Exception:
                 pass
 
-            return run_proc(self.id, lambda x: make_thumb_cmd(x, source), 'thumb')
+            return run_proc(self.id, lambda x: Thumbnail.make_cmd(x, source), 'thumb')
 
         def run(self):
             """ Wait until the end of the process.
@@ -249,6 +230,27 @@ class Thumbnail(object):
 
             with cls.lock:
                 cls.lock.wait(cls.interval * .75)
+
+    @classmethod
+    def make_cmd(cls, num, source=None):
+        """ Generate FFmpeg command for thumbnail generation.
+        """
+        inp = config.get('thumbnail', 'input_opt')
+        out = config.get('thumbnail', 'output_opt')
+
+        args = [config.get('ffmpeg', 'bin')]
+        args += shlex.split(inp)
+        args += ['-probesize', config.get('ffmpeg', 'probe')]
+        if source is None:
+            source = in_stream
+        args += ['-i', source.format(num)]
+        args += shlex.split(out)
+        out = os.path.join(
+            config.get('thumbnail', 'dir'),
+            '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
+        )
+        args.append(out)
+        return args
 
     @classmethod
     def start_download(cls):
