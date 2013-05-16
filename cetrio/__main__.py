@@ -23,16 +23,16 @@ class Handler(server.BaseHTTPRequestHandler):
         info = urlparse.urlparse(self.path)
         id, action = info.path.strip('/').split('/')
         if action == 'start':
-            base.start(id, base.data)
+            base.Video.start(id)
         else:
-            base.stop(id, base.data)
+            base.Video.stop(id)
 
     do_POST = do_GET
 
 
 def shutdown():
     print('Stopping cameras...')
-    for cam in base.data.values():
+    for cam in base.Video.data.values():
         cam.stop(now=True)
     print('Done!')
     print('Stopping thumbnail download...')
@@ -41,7 +41,7 @@ def shutdown():
 
 
 def main():
-    base.initialize_from_stats()
+    base.Video.initialize_from_stats()
     base.Thumbnail.start_download()
 
     host = config.get('local', 'addr')

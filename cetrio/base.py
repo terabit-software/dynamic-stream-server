@@ -13,7 +13,6 @@ import noxml
 from config import config
 import cameras
 
-data = {}
 
 in_stream = '{0}{1}/{2} {3}'.format(
     config.get('remote-rtmp-server', 'addr'),
@@ -27,13 +26,6 @@ out_stream = '{0}{1}/'.format(
     config.get('rtmp-server', 'addr'),
     config.get('rtmp-server', 'app')
 ) + '{0}'
-
-
-def get_stats():
-    addr = config.get('http-server', 'addr')
-    stat = config.get('http-server', 'stat_url')
-    data = urlopen(addr + stat).read()
-    return noxml.load(data)
 
 
 def run_proc(num, cmd_maker, mode):
@@ -138,22 +130,84 @@ class Camera(object):
         thread.start()
 
 
-def make_cmd(num):
-    """ Generate FFmpeg command to fetch video from
-        remote source.
-    """
-    inp = config.get('ffmpeg', 'input_opt')
-    out = config.get('ffmpeg', 'output_opt')
+class Video(object):
+    data = {}
 
-    args = [config.get('ffmpeg', 'bin')]
-    args += shlex.split(inp)
-    args += ['-probesize', config.get('ffmpeg', 'probe')]
-    args += ['-i',  in_stream.format(num)]
-    args += shlex.split(out)
-    args.append(out_stream.format(num))
-    return args
+    @classmethod
+    def make_cmd(cls, num):
+        """ Generate FFmpeg command to fetch video from
+            remote source.
+        """
+        inp = config.get('ffmpeg', 'input_opt')
+        out = config.get('ffmpeg', 'output_opt')
 
+        args = [config.get('ffmpeg', 'bin')]
+        args += shlex.split(inp)
+        args += ['-probesize', config.get('ffmpeg', 'probe')]
+        args += ['-i',  in_stream.format(num)]
+        args += shlex.split(out)
+        args.append(out_stream.format(num))
+        return args
 
+    @classmethod
+    def start(cls, num, increment=1):
+        try:
+            camera = cls.data[num]
+        except KeyError:
+            camera = Camera(lambda: run_proc(num, cls.make_cmd, 'fetch'))
+            cls.data[num] = camera
+
+        if not camera.proc and not camera.run:
+            camera.start()
+        camera.inc(increment)
+        print(cls.data)
+
+    @classmethod
+    def stop(cls, num):
+        try:
+            camera = cls.data[num].dec()
+        except KeyError:
+            return
+
+        if not camera.cnt:
+            camera.stop()
+        print(cls.data)
+
+    @classmethod
+    def get_stats(cls):
+        addr = config.get('http-server', 'addr')
+        stat = config.get('http-server', 'stat_url')
+        data = urlopen(addr + stat).read()
+        return noxml.load(data)
+
+    @classmethod
+    def initialize_from_stats(cls):
+        stats = cls.get_stats()['server']['application']
+        if isinstance(stats, dict): stats = [stats]
+        app = config.get('rtmp-server', 'app')
+        try:
+            app = next(x['live'] for x in stats if x['name'] == app)
+        except StopIteration:
+            raise NameError('No app named %r' % app)
+
+        # App clients
+        streams = app.get('stream')
+        if streams is None:
+            return
+        if isinstance(streams, dict):
+            streams = [streams]
+
+        for stream in streams:
+            # Stream clients
+            nclients = int(stream['nclients'])
+
+            if 'publishing' in stream:
+                nclients -= 1
+
+            if nclients <= 0:
+                continue
+
+            cls.start(stream['name'], nclients)
 
 
 class Thumbnail(object):
@@ -177,7 +231,7 @@ class Thumbnail(object):
             source = in_stream
             try:
                 # Use local connection if camera is already running
-                if data[self.id].run:
+                if Video.data[self.id].run:
                     source = out_stream
             except Exception:
                 pass
@@ -266,56 +320,3 @@ class Thumbnail(object):
             cls.lock.notify_all()
             while not cls.clean:
                 cls.lock.wait()
-
-
-def start(num, data, increment=1):
-    try:
-        camera = data[num]
-    except KeyError:
-        camera = Camera(lambda: run_proc(num, make_cmd, 'fetch'))
-        data[num] = camera
-
-    if not camera.proc and not camera.run:
-        camera.start()
-    camera.inc(increment)
-    print(data)
-
-
-def stop(num, data):
-    try:
-        camera = data[num].dec()
-    except KeyError:
-        return
-
-    if not camera.cnt:
-        camera.stop()
-    print(data)
-
-
-def initialize_from_stats():
-    stats = get_stats()['server']['application']
-    if isinstance(stats, dict): stats = [stats]
-    app = config.get('rtmp-server', 'app')
-    try:
-        app = next(x['live'] for x in stats if x['name'] == app)
-    except StopIteration:
-        raise NameError('No app named %r' % app)
-
-    # App clients
-    streams = app.get('stream')
-    if streams is None:
-        return
-    if isinstance(streams, dict):
-        streams = [streams]
-
-    for stream in streams:
-        # Stream clients
-        nclients = int(stream['nclients'])
-        
-        if 'publishing' in stream:
-            nclients -= 1
-
-        if nclients <= 0:
-            continue
-
-        start(stream['name'], data, nclients)
