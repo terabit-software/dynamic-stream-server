@@ -39,8 +39,8 @@ def run_proc(num, cmd_maker, mode):
 
 
 class Camera(object):
-    run_timeout = int(config.get('ffmpeg', 'timeout'))
-    reload_timeout = int(config.get('ffmpeg', 'reload'))
+    run_timeout = config.getint('ffmpeg', 'timeout')
+    reload_timeout = config.getint('ffmpeg', 'reload')
 
     def __init__(self, fn, timeout=run_timeout):
         self.lock = threading.Lock()
@@ -221,7 +221,7 @@ class Thumbnail(object):
     lock = threading.Condition(threading.Lock())
 
     cam_list = [x['id'] for x in cameras.get_cameras()]
-    interval = int(config.get('thumbnail', 'interval'))
+    interval = config.getint('thumbnail', 'interval')
 
     class WorkerThread(threading.Thread):
         def __init__(self, id):
@@ -250,6 +250,13 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
+        try:
+            delay = config.getint('thumbnail', 'start_after')
+        except Exception:
+            delay = 0
+        with cls.lock:
+            cls.lock.wait(delay)
+
         while True:
             if not cls.run:
                 break

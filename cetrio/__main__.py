@@ -44,7 +44,7 @@ def main():
     base.Thumbnail.start_download()
 
     host = config.get('local', 'addr')
-    port = int(config.get('local', 'port'))
+    port = config.getint('local', 'port')
 
     socketserver.TCPServer.allow_reuse_address = True
     ss = None
