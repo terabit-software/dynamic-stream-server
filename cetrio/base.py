@@ -216,7 +216,7 @@ class Thumbnail(object):
     clean = True
     lock = threading.Condition(threading.Lock())
 
-    cam_list = [x['id'] for x in cameras.get_cameras()]
+    cam_list = None
     interval = config.getint('thumbnail', 'interval')
 
     class WorkerThread(threading.Thread):
@@ -230,14 +230,16 @@ class Thumbnail(object):
             """ Select stream and open process
             """
             source = in_stream
+            seek = None
             try:
                 # Use local connection if camera is already running
                 if Video.data[self.id].run:
                     source = out_stream
+                    seek = 1
             except Exception:
                 pass
 
-            return run_proc(self.id, lambda x: Thumbnail.make_cmd(x, source), 'thumb')
+            return run_proc(self.id, lambda x: Thumbnail.make_cmd(x, source, seek), 'thumb')
 
         def run(self):
             """ Wait until the end of the process.
@@ -246,6 +248,7 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
+        cls.cam_list = [x['id'] for x in cameras.get_cameras()]
         try:
             delay = config.getint('thumbnail', 'start_after')
         except Exception:
@@ -295,13 +298,15 @@ class Thumbnail(object):
                 cls.lock.wait(cls.interval * .25)
 
     @classmethod
-    def make_cmd(cls, num, source=None):
+    def make_cmd(cls, num, source=None, seek=None):
         """ Generate FFmpeg command for thumbnail generation.
         """
         if source is None:
             source = in_stream
 
         out_opt = config.get('thumbnail', 'output_opt')
+        if seek is not None:
+            out_opt += ' -ss ' + str(seek)
 
         return ffmpeg.cmd(
             config.get('thumbnail', 'input_opt'),
