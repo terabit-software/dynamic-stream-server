@@ -2,7 +2,6 @@ import time
 import subprocess
 import threading
 import os
-import shlex
 try:
     # Python 3
     from urllib.request import urlopen
@@ -12,6 +11,7 @@ except ImportError:
 import noxml
 from config import config
 import cameras
+import ffmpeg
 
 
 in_stream = '{0}{1}/{2} {3}'.format(
@@ -138,16 +138,12 @@ class Video(object):
         """ Generate FFmpeg command to fetch video from
             remote source.
         """
-        inp = config.get('ffmpeg', 'input_opt')
-        out = config.get('ffmpeg', 'output_opt')
-
-        args = [config.get('ffmpeg', 'bin')]
-        args += shlex.split(inp)
-        args += ['-probesize', config.get('ffmpeg', 'probe')]
-        args += ['-i',  in_stream.format(num)]
-        args += shlex.split(out)
-        args.append(out_stream.format(num))
-        return args
+        return ffmpeg.cmd(
+            config.get('cetrio', 'input_opt'),
+            in_stream.format(num),
+            config.get('cetrio', 'output_opt'),
+            out_stream.format(num)
+        )
 
     @classmethod
     def start(cls, num, increment=1):
@@ -302,22 +298,20 @@ class Thumbnail(object):
     def make_cmd(cls, num, source=None):
         """ Generate FFmpeg command for thumbnail generation.
         """
-        inp = config.get('thumbnail', 'input_opt')
-        out = config.get('thumbnail', 'output_opt')
-
-        args = [config.get('ffmpeg', 'bin')]
-        args += shlex.split(inp)
-        args += ['-probesize', config.get('ffmpeg', 'probe')]
         if source is None:
             source = in_stream
-        args += ['-i', source.format(num)]
-        args += shlex.split(out)
-        out = os.path.join(
-            config.get('thumbnail', 'dir'),
-            '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
+
+        out_opt = config.get('thumbnail', 'output_opt')
+
+        return ffmpeg.cmd(
+            config.get('thumbnail', 'input_opt'),
+            source.format(num),
+            out_opt,
+            os.path.join(
+                config.get('thumbnail', 'dir'),
+                '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
+            )
         )
-        args.append(out)
-        return args
 
     @classmethod
     def start_download(cls):
