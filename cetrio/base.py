@@ -10,22 +10,8 @@ except ImportError:
 
 import noxml
 from config import config
-import cameras
 import ffmpeg
-
-
-in_stream = '{0}{1}/{2} {3}'.format(
-    config.get('remote-rtmp-server', 'addr'),
-    config.get('remote-rtmp-server', 'app'),
-    config.get('remote-rtmp-server', 'stream'),
-    config.get('remote-rtmp-server', 'data'),
-)
-
-
-out_stream = '{0}{1}/'.format(
-    config.get('rtmp-server', 'addr'),
-    config.get('rtmp-server', 'app')
-) + '{0}'
+import streams
 
 
 def run_proc(num, cmd_maker, mode):
@@ -103,7 +89,7 @@ class Camera(object):
         try:
             self.proc.kill()
             self.proc.wait()
-        except OSError:
+        except (OSError, AttributeError):
             pass
         finally:
             self.proc = None
@@ -134,24 +120,13 @@ class Video(object):
     data = {}
 
     @classmethod
-    def make_cmd(cls, num):
-        """ Generate FFmpeg command to fetch video from
-            remote source.
-        """
-        return ffmpeg.cmd(
-            config.get('cetrio', 'input_opt'),
-            in_stream.format(num),
-            config.get('cetrio', 'output_opt'),
-            out_stream.format(num)
-        )
-
-    @classmethod
-    def start(cls, num, increment=1):
+    def start(cls, id, increment=1):
         try:
-            camera = cls.data[num]
+            camera = cls.data[id]
         except KeyError:
-            camera = Camera(lambda: run_proc(num, cls.make_cmd, 'fetch'))
-            cls.data[num] = camera
+            make_cmd = streams.select_provider(id).make_cmd
+            camera = Camera(lambda: run_proc(id, make_cmd, 'fetch'))
+            cls.data[id] = camera
 
         if not camera.proc and not camera.run:
             camera.start()
@@ -159,9 +134,9 @@ class Video(object):
         print(cls.data)
 
     @classmethod
-    def stop(cls, num):
+    def stop(cls, id):
         try:
-            camera = cls.data[num].dec()
+            camera = cls.data[id].dec()
         except KeyError:
             return
 
@@ -222,24 +197,32 @@ class Thumbnail(object):
     class WorkerThread(threading.Thread):
         def __init__(self, id):
             super(Thumbnail.WorkerThread, self).__init__()
-            self.id = str(id)
+            self.id = id
             self.proc = self._open_proc()
             self.daemon = True
 
         def _open_proc(self):
             """ Select stream and open process
             """
-            source = in_stream
+            provider = streams.select_provider(self.id)
+            source = provider.in_stream
             seek = None
+            origin = None
             try:
-                # Use local connection if camera is already running
+                # Use local connection if camera is already running.
                 if Video.data[self.id].run:
-                    source = out_stream
+                    source = provider.out_stream
                     seek = 1
             except Exception:
-                pass
+                # If using remote server instead of local.
+                self.id = provider.get_camera(self.id)
+                origin = provider
 
-            return run_proc(self.id, lambda x: Thumbnail.make_cmd(x, source, seek), 'thumb')
+            return run_proc(
+                self.id,
+                lambda x: Thumbnail.make_cmd(x, source, seek, origin),
+                'thumb',
+            )
 
         def run(self):
             """ Wait until the end of the process.
@@ -248,7 +231,9 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
-        cls.cam_list = [x['id'] for x in cameras.get_cameras()]
+        cams = [p.cameras() for p in streams.providers.values()]
+        cls.cam_list = [item for sublist in cams for item in sublist]
+
         try:
             delay = config.getint('thumbnail', 'start_after')
         except Exception:
@@ -298,23 +283,26 @@ class Thumbnail(object):
                 cls.lock.wait(cls.interval * .25)
 
     @classmethod
-    def make_cmd(cls, num, source=None, seek=None):
+    def make_cmd(cls, name, source, seek=None, origin=None):
         """ Generate FFmpeg command for thumbnail generation.
         """
-        if source is None:
-            source = in_stream
-
         out_opt = config.get('thumbnail', 'output_opt')
         if seek is not None:
             out_opt += ' -ss ' + str(seek)
 
+        # If fetching thumbnail from origin server, will need the camera
+        # id that is different from camera name.
+        id = name
+        if origin:
+            id = origin.get_id(name)
+
         return ffmpeg.cmd(
             config.get('thumbnail', 'input_opt'),
-            source.format(num),
+            source.format(name),
             out_opt,
             os.path.join(
                 config.get('thumbnail', 'dir'),
-                '{0}.{1}'.format(num, config.get('thumbnail', 'format'))
+                '{0}.{1}'.format(id, config.get('thumbnail', 'format'))
             )
         )
 

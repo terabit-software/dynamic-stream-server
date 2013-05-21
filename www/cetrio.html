@@ -8,9 +8,9 @@
         <td>
         <div id="container1">Loading the player ...</div>
         <script type="text/javascript">
-            re = /\d+$/;
+            re = /\w+$/;
             var id = re.exec(document.location.search)[0];
-            if(id == null){id = 1};
+            if(id == null){id = 'C1';}
             console.log(id);
             jwplayer("container1").setup({
                 modes: [
@@ -20,7 +20,7 @@
                             bufferlength: 1,
                             file: id,
                             streamer: "rtmp://{local_ip}/cetrio",
-                            provider: "rtmp",
+                            provider: "rtmp"
                         }
                     }
                 ]
