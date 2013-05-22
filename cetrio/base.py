@@ -14,23 +14,28 @@ import ffmpeg
 import streams
 
 
-def run_proc(num, cmd_maker, mode):
-    cmd = cmd_maker(num)
-
-    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, num))
+def run_proc(id, cmd, mode):
+    """ Open process with error output redirected to file.
+        The standart output can be read.
+    """
+    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, id))
     with open(log, 'w') as f:
-        return subprocess.Popen(cmd,
+        return subprocess.Popen(
+            cmd,
             stdout=subprocess.PIPE,
-            stderr=f)
+            stderr=f
+        )
 
 
 class Camera(object):
     run_timeout = config.getint('ffmpeg', 'timeout')
     reload_timeout = config.getint('ffmpeg', 'reload')
 
-    def __init__(self, fn, timeout=run_timeout):
+    def __init__(self, id, timeout=run_timeout):
         self.lock = threading.Lock()
-        self.fn = fn
+        self.id = id
+        provider = streams.select_provider(id)
+        self.fn = lambda: run_proc(id, provider.make_cmd(id), 'fetch')
         self.cnt = 0
         self.run = False
         self.proc = None
@@ -38,8 +43,8 @@ class Camera(object):
         self.timeout = timeout
 
     def __repr__(self):
-        pid = self.proc.pid if self.proc else 0
-        return '<Camera: {0} Usuarios, FFmpeg pid: {1}>'.format(self.cnt, pid)
+        pid = self.proc.pid if self.proc else None
+        return '<{0}: Users={1} Pid={2}>'.format(self.id, self.cnt, pid)
 
     @property
     def run(self):
@@ -59,23 +64,29 @@ class Camera(object):
             self.cnt -= 1
         return self
 
+    def _proc_msg(self, pid, msg):
+        return '{0} - FFmpeg[{1}] {2}'.format(self.id, pid, msg)
+
     def start(self):
         def worker():
             self.run = True
             self.proc = self.fn()
-            print('Starting FFmpeg')
-            
+            pid = self.proc and self.proc.pid
+            print(self._proc_msg(pid, 'started'))
+
             while True:
                 self.proc.wait()
-                print('FFmpeg from pid {0} died!'.format(self.proc and self.proc.pid))
                 self.proc = None
                 if self.run:
+                    print(self._proc_msg(pid, 'died'))
                     time.sleep(self.reload_timeout)
                     if self.run:
                         # It might be killed after waiting
                         self.proc = self.fn()
-                        print('Restarting FFmpeg')
+                        pid = self.proc and self.proc.pid
+                        print(self._proc_msg(pid, 'restarted'))
                         continue
+                print(self._proc_msg(pid, 'stopped'))
                 break
 
         self.thread = threading.Thread(target=worker)
@@ -124,14 +135,13 @@ class Video(object):
         try:
             camera = cls.data[id]
         except KeyError:
-            make_cmd = streams.select_provider(id).make_cmd
-            camera = Camera(lambda: run_proc(id, make_cmd, 'fetch'))
+            camera = Camera(id)
             cls.data[id] = camera
 
         if not camera.proc and not camera.run:
             camera.start()
         camera.inc(increment)
-        print(cls.data)
+        print(camera)
 
     @classmethod
     def stop(cls, id):
@@ -142,7 +152,7 @@ class Video(object):
 
         if not camera.cnt:
             camera.stop()
-        print(cls.data)
+        print(camera)
 
     @classmethod
     def get_stats(cls):
@@ -220,7 +230,7 @@ class Thumbnail(object):
 
             return run_proc(
                 self.id,
-                lambda x: Thumbnail.make_cmd(x, source, seek, origin),
+                Thumbnail.make_cmd(self.id, source, seek, origin),
                 'thumb',
             )
 
