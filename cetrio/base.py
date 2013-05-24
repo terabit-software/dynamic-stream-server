@@ -41,7 +41,7 @@ class Camera(object):
             'fetch'
         )
         self.cnt = 0
-        self.run = False
+        self._proc_run = False
         self.proc = None
         self.thread = None
         self.timeout = timeout
@@ -56,17 +56,21 @@ class Camera(object):
         return self.cnt + bool(self.http_client)
 
     @property
-    def run(self):
-        return self._run
+    def alive(self):
+        return self.proc or self.proc_run
+
+    @property
+    def proc_run(self):
+        return self._proc_run
     
-    @run.setter
-    def run(self, value):
+    @proc_run.setter
+    def proc_run(self, value):
         with self.lock:
-            self._run = value 
+            self._proc_run = value
 
     def inc(self, k=1):
         self.cnt += k
-        if not self.proc and not self.run:
+        if not self.proc and not self.proc_run:
             self.proc_start()
         return self
 
@@ -84,7 +88,7 @@ class Camera(object):
         """ Process starter on another thread.
         """
         def worker():
-            self.run = True
+            self.proc_run = True
             self.proc = self.fn()
             pid = self.proc and self.proc.pid
             print(self._proc_msg(pid, 'started'))
@@ -92,10 +96,10 @@ class Camera(object):
             while True:
                 self.proc.wait()
                 self.proc = None
-                if self.run:
+                if self.proc_run:
                     print(self._proc_msg(pid, 'died'))
                     time.sleep(self.reload_timeout)
-                    if self.run:
+                    if self.proc_run:
                         # It might be killed after waiting
                         self.proc = self.fn()
                         pid = self.proc and self.proc.pid
@@ -122,20 +126,20 @@ class Camera(object):
 
     def proc_stop(self, now=False):
         if now:
-            self.run = False
+            self.proc_run = False
             self._kill()
             return
 
-        if not self.run:
+        if not self.proc_run:
             return
-        self.run = False
+        self.proc_run = False
 
         def stop_worker():
             time.sleep(self.timeout)
             if not self.clients:
                 self._kill()
             else:
-                self.run = True
+                self.proc_run = True
 
         thread = threading.Thread(target=stop_worker)
         thread.daemon = True
@@ -230,7 +234,7 @@ class Thumbnail(object):
             id = self.id
 
             # Use local connection if camera is already running.
-            if Video.get_camera(self.id).run:
+            if Video.get_camera(self.id).alive:
                 source = provider.out_stream
                 seek = 1
             else:
