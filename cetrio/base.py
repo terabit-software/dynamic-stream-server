@@ -227,19 +227,20 @@ class Thumbnail(object):
             source = provider.in_stream
             seek = None
             origin = None
-            try:
-                # Use local connection if camera is already running.
-                if Video.data[self.id].run:
-                    source = provider.out_stream
-                    seek = 1
-            except Exception:
-                # If using remote server instead of local.
-                self.id = provider.get_camera(self.id)
+            id = self.id
+
+            # Use local connection if camera is already running.
+            if Video.get_camera(self.id).run:
+                source = provider.out_stream
+                seek = 1
+            else:
+                # If using remote server identifier instead of local.
+                id = provider.get_camera(self.id)
                 origin = provider
 
             return run_proc(
                 self.id,
-                Thumbnail.make_cmd(self.id, source, seek, origin),
+                Thumbnail.make_cmd(id, source, seek, origin),
                 'thumb',
             )
 
