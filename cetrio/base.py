@@ -35,16 +35,25 @@ class Camera(object):
         self.lock = threading.Lock()
         self.id = id
         provider = streams.select_provider(id)
-        self.fn = lambda: run_proc(id, provider.make_cmd(id), 'fetch')
+        self.fn = lambda self=self: run_proc(
+            self.id,
+            provider.make_cmd(self.id),
+            'fetch'
+        )
         self.cnt = 0
         self.run = False
         self.proc = None
         self.thread = None
         self.timeout = timeout
+        self.http_client = None
 
     def __repr__(self):
         pid = self.proc.pid if self.proc else None
-        return '<{0}: Users={1} Pid={2}>'.format(self.id, self.cnt, pid)
+        return '<{0}: Users={1} Pid={2}>'.format(self.id, self.clients, pid)
+
+    @property
+    def clients(self):
+        return self.cnt + bool(self.http_client)
 
     @property
     def run(self):
@@ -57,17 +66,23 @@ class Camera(object):
 
     def inc(self, k=1):
         self.cnt += k
+        if not self.proc and not self.run:
+            self.proc_start()
         return self
 
     def dec(self):
         if self.cnt:
             self.cnt -= 1
+        if not self.clients:
+            self.proc_stop()
         return self
 
     def _proc_msg(self, pid, msg):
         return '{0} - FFmpeg[{1}] {2}'.format(self.id, pid, msg)
 
-    def start(self):
+    def proc_start(self):
+        """ Process starter on another thread.
+        """
         def worker():
             self.run = True
             self.proc = self.fn()
@@ -95,7 +110,7 @@ class Camera(object):
 
     def _kill(self):
         """ Kill the FFmpeg process. Don't call this function directly,
-            otherwise the process may be restarted. Call `stop` instead.
+            otherwise the process may be restarted. Call `proc_stop` instead.
         """
         try:
             self.proc.kill()
@@ -105,7 +120,7 @@ class Camera(object):
         finally:
             self.proc = None
 
-    def stop(self, now=False):
+    def proc_stop(self, now=False):
         if now:
             self.run = False
             self._kill()
@@ -117,7 +132,7 @@ class Camera(object):
 
         def stop_worker():
             time.sleep(self.timeout)
-            if not self.cnt:
+            if not self.clients:
                 self._kill()
             else:
                 self.run = True
@@ -128,31 +143,25 @@ class Camera(object):
 
 
 class Video(object):
-    data = {}
+    _data = {}
 
     @classmethod
-    def start(cls, id, increment=1):
-        try:
-            camera = cls.data[id]
-        except KeyError:
-            camera = Camera(id)
-            cls.data[id] = camera
-
-        if not camera.proc and not camera.run:
-            camera.start()
-        camera.inc(increment)
+    def start(cls, id, increment=1, http_wait=None):
+        camera = cls.get_camera(id).inc(increment, http_wait=http_wait)
         print(camera)
 
     @classmethod
     def stop(cls, id):
-        try:
-            camera = cls.data[id].dec()
-        except KeyError:
-            return
-
-        if not camera.cnt:
-            camera.stop()
+        camera = cls.get_camera(id).dec()
         print(camera)
+
+    @classmethod
+    def get_camera(cls, id):
+        cam = cls._data.get(id)
+        if cam is None:
+            cam = Camera(id)
+            cls._data[id] = cam
+        return cam
 
     @classmethod
     def get_stats(cls):
@@ -192,8 +201,8 @@ class Video(object):
 
     @classmethod
     def terminate_cameras(cls):
-        for cam in cls.data.values():
-            cam.stop(now=True)
+        for cam in cls._data.values():
+            cam.proc_stop(now=True)
 
 
 class Thumbnail(object):
