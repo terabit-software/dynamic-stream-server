@@ -117,6 +117,7 @@ class Camera(object):
             self.cnt += k
         if not self.proc and not self.proc_run:
             self.proc_start()
+        print(self)
         return self
 
     def dec(self, http=False):
@@ -128,6 +129,7 @@ class Camera(object):
                 self.cnt -= 1
         if not self.clients:
             self.proc_stop()
+        print(self)
         return self
 
     def _proc_msg(self, pid, msg):
@@ -200,13 +202,11 @@ class Video(object):
 
     @classmethod
     def start(cls, id, increment=1, http_wait=None):
-        camera = cls.get_camera(id).inc(increment, http_wait=http_wait)
-        print(camera)
+        cls.get_camera(id).inc(increment, http_wait=http_wait)
 
     @classmethod
     def stop(cls, id):
-        camera = cls.get_camera(id).dec()
-        print(camera)
+        cls.get_camera(id).dec()
 
     @classmethod
     def get_camera(cls, id):

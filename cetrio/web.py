@@ -20,7 +20,6 @@ class Handler(server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         info = urlparse.urlparse(self.path)
-        print(info)
         data = info.path.strip('/').split('/')
         id, action = data[:2]
 
