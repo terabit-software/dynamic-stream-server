@@ -110,5 +110,6 @@ providers = dict(
     (cls.identifier, cls)
     for cls in globals().values()
     if isinstance(cls, type) and \
-       issubclass(cls, BaseRemoteCamera)
+       issubclass(cls, BaseRemoteCamera) and \
+       cls.conf is not None # remove base classes
 )
