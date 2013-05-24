@@ -27,6 +27,41 @@ def run_proc(id, cmd, mode):
         )
 
 
+class HTTPClient(object):
+    """ Emulate the behaviour of a RTMP client when there's an HTTP access
+        for a certain camera. If another HTTP access is made within the
+        timeout period, the Camera instance will be decremented.
+    """
+    def __init__(self, parent):
+        self.lock = threading.Condition(threading.Lock())
+        self.stopped = True
+        self.timeout = None
+        self.parent = parent
+
+    def wait(self, timeout):
+        self.timeout = timeout
+        if not self.stopped:
+            with self.lock:
+                self.stopped = True
+                self.lock.notify_all()
+        else:
+            self.thread = threading.Thread(target=self._wait_worker)
+            self.thread.daemon = True
+            self.thread.start()
+        return self
+
+    def _wait_worker(self):
+        with self.lock:
+            while self.stopped:
+                self.stopped = False
+                self.lock.wait(self.timeout)
+            self.stopped = True
+            self.parent.dec(http=True)
+
+    def __bool__(self):
+        return not self.stopped
+
+
 class Camera(object):
     run_timeout = config.getint('ffmpeg', 'timeout')
     reload_timeout = config.getint('ffmpeg', 'reload')
@@ -45,7 +80,7 @@ class Camera(object):
         self.proc = None
         self.thread = None
         self.timeout = timeout
-        self.http_client = None
+        self.http_client = HTTPClient(self)
 
     def __repr__(self):
         pid = self.proc.pid if self.proc else None
@@ -68,15 +103,29 @@ class Camera(object):
         with self.lock:
             self._proc_run = value
 
-    def inc(self, k=1):
-        self.cnt += k
+    def inc(self, k=1, http_wait=None):
+        """ Increment user count unless it is a http user (then http_wait
+            must be set). If so, it should wait a period of time on another
+            thread and the clients property will be indirectly incremented.
+
+            If there is no process running and it should be, a new process
+            will be started.
+        """
+        if http_wait:
+            self.http_client.wait(http_wait)
+        else:
+            self.cnt += k
         if not self.proc and not self.proc_run:
             self.proc_start()
         return self
 
-    def dec(self):
-        if self.cnt:
-            self.cnt -= 1
+    def dec(self, http=False):
+        """ Decrement the user count unless it is a http user. If there are no
+            new clients, the process is scheduled to shutdown.
+        """
+        if not http:
+            if self.cnt:
+                self.cnt -= 1
         if not self.clients:
             self.proc_stop()
         return self

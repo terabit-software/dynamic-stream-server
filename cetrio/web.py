@@ -15,6 +15,9 @@ from config import config
 
 
 class Handler(server.BaseHTTPRequestHandler):
+    timeout = config.getint('local', 'http_client_timeout')
+    max_timeout = config.getint('local', 'http_client_timeout_max')
+
     def do_GET(self):
         info = urlparse.urlparse(self.path)
         print(info)
@@ -23,6 +26,14 @@ class Handler(server.BaseHTTPRequestHandler):
 
         if action == 'start':
             base.Video.start(id)
+        elif action == 'http':
+            try:
+                timeout = int(data[2])
+            except (IndexError, ValueError):
+                timeout = self.timeout
+            timeout = min(timeout, self.max_timeout)
+
+            base.Video.start(id, http_wait=timeout)
         else:
             base.Video.stop(id)
 
