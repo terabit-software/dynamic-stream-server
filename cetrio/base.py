@@ -60,6 +60,7 @@ class HTTPClient(object):
 
     def __bool__(self):
         return not self.stopped
+    __nonzero__ = __bool__
 
 
 class Camera(object):
