@@ -332,7 +332,7 @@ class Thumbnail(object):
 
             error = []
             for th in ths:
-                if th.proc.poll() is None:
+                if th.proc.poll() != 0:
                     error.append(th.id)
                     try:
                         th.proc.kill()
