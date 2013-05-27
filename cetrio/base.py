@@ -12,6 +12,7 @@ import noxml
 from config import config
 import ffmpeg
 import streams
+import thread_tools
 
 
 def run_proc(id, cmd, mode):
@@ -29,11 +30,11 @@ def run_proc(id, cmd, mode):
 
 class HTTPClient(object):
     """ Emulate the behaviour of a RTMP client when there's an HTTP access
-        for a certain camera. If another HTTP access is made within the
-        timeout period, the Camera instance will be decremented.
+        for a certain camera. If no other HTTP access is made within the
+        timeout period, the `Camera` instance will be decremented.
     """
     def __init__(self, parent):
-        self.lock = threading.Condition(threading.Lock())
+        self.lock = thread_tools.Condition()
         self.stopped = True
         self.timeout = None
         self.parent = parent
@@ -262,7 +263,7 @@ class Video(object):
 class Thumbnail(object):
     run = True
     clean = True
-    lock = threading.Condition(threading.Lock())
+    lock = thread_tools.Condition()
 
     cam_list = None
     interval = config.getint('thumbnail', 'interval')
