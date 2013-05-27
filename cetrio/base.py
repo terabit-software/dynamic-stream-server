@@ -6,6 +6,7 @@ try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
+from concurrent import futures
 
 import noxml
 from config import config
@@ -260,12 +261,14 @@ class Thumbnail(object):
 
     cam_list = None
     interval = config.getint('thumbnail', 'interval')
+    workers = config.getint('thumbnail', 'workers')
+    timeout = config.getint('thumbnail', 'timeout')
 
-    class WorkerThread(thread_tools.Thread):
-        def __init__(self, id):
-            super(Thumbnail.WorkerThread, self).__init__()
+    class Worker(object):
+        def __init__(self, id, timeout):
             self.id = id
-            self.proc = self._open_proc()
+            self.timeout = timeout
+            self.proc = None
 
         def _open_proc(self):
             """ Select stream and open process
@@ -291,10 +294,36 @@ class Thumbnail(object):
                 'thumb',
             )
 
-        def run(self):
-            """ Wait until the end of the process.
+        def _close_proc(self):
+            """ Kill the open process.
             """
+            try:
+                self.proc.kill()
+                self.proc.wait()
+            except OSError:
+                pass
+
+        def __call__(self):
+            """ Wait until the first of these events :
+                    - End of the process;
+                    - Timeout (on a separeted thread);
+                    - User request for termination (on the same separeted
+                      thread as the timeout).
+                Returns the process output code.
+            """
+            with Thumbnail.lock:
+                if not Thumbnail.run:
+                    return
+
+                self.proc = self._open_proc()
+                def waiter():
+                    with Thumbnail.lock:
+                        Thumbnail.lock.wait(self.timeout)
+                        self._close_proc()
+                thread_tools.Thread(waiter).start()
+
             self.proc.communicate()
+            return self.proc.poll()
 
     @classmethod
     def main_worker(cls):
@@ -309,45 +338,38 @@ class Thumbnail(object):
             cls.lock.wait(delay)
 
         while True:
-            if not cls.run:
-                break
-
             with cls.lock:
+                if not cls.run:
+                    break
                 cls.clean = False
+            t = time.time()
+            with futures.ThreadPoolExecutor(cls.workers) as executor:
+                map = dict(
+                    (executor.submit(cls.Worker(x, cls.timeout)), x)
+                    for x in cls.cam_list
+                )
+                done = {}
+                for future in futures.as_completed(map):
+                    done[map[future]] = future.result()
+                error = [x for x in cls.cam_list if done[x] != 0]
 
-                ths = []
-                for x in cls.cam_list:
-                    th = cls.WorkerThread(x)
-                    th.start()
-                    ths.append(th)
+                if cls.run: # Show stats
+                    cams = len(cls.cam_list)
+                    print('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
+                    if error:
+                        print('Could not fetch:\n' + ', '.join(error))
 
-                cls.lock.wait(cls.interval * .75)
-
-            error = []
-            for th in ths:
-                if th.proc.poll() != 0:
-                    error.append(th.id)
-                    try:
-                        th.proc.kill()
-                    except OSError:
-                        pass
-                th.proc.wait()
-            ok = len(ths) - len(error)
-
-            if cls.run: # Show stats
-                print('Finished fetching thumbnails: {0}/{1}'.format(ok, len(ths)))
-                if ok != len(ths):
-                    print('Could not fetch:\n' + ', '.join(error))
-
+            t = time.time() - t
+            interval = cls.interval - t
             with cls.lock:
                 cls.clean = True
                 cls.lock.notify_all()
 
-            if not cls.run:
-                break
+                if interval >= 0:
+                    cls.lock.wait(interval)
+                elif cls.run:
+                    print('Thumbnail round delayed by {0:.2f} seconds'.format(-interval))
 
-            with cls.lock:
-                cls.lock.wait(cls.interval * .25)
 
     @classmethod
     def make_cmd(cls, name, source, seek=None, origin=None):
@@ -379,9 +401,8 @@ class Thumbnail(object):
 
     @classmethod
     def stop_download(cls):
-        cls.run = False
-
         with cls.lock:
+            cls.run = False
             cls.lock.notify_all()
             while not cls.clean:
                 cls.lock.wait()
