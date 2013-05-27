@@ -1,6 +1,5 @@
 import time
 import subprocess
-import threading
 import os
 try:
     # Python 3
@@ -46,9 +45,7 @@ class HTTPClient(object):
                 self.stopped = True
                 self.lock.notify_all()
         else:
-            self.thread = threading.Thread(target=self._wait_worker)
-            self.thread.daemon = True
-            self.thread.start()
+            self.thread = thread_tools.Thread(self._wait_worker).start()
         return self
 
     def _wait_worker(self):
@@ -69,7 +66,7 @@ class Camera(object):
     reload_timeout = config.getint('ffmpeg', 'reload')
 
     def __init__(self, id, timeout=run_timeout):
-        self.lock = threading.Lock()
+        self.lock = thread_tools.Lock()
         self.id = id
         provider = streams.select_provider(id)
         self.fn = lambda self=self: run_proc(
@@ -161,9 +158,7 @@ class Camera(object):
                 print(self._proc_msg(pid, 'stopped'))
                 break
 
-        self.thread = threading.Thread(target=worker)
-        self.thread.daemon = True
-        self.thread.start()
+        self.thread = thread_tools.Thread(worker).start()
 
     def _kill(self):
         """ Kill the FFmpeg process. Don't call this function directly,
@@ -194,9 +189,7 @@ class Camera(object):
             else:
                 self.proc_run = True
 
-        thread = threading.Thread(target=stop_worker)
-        thread.daemon = True
-        thread.start()
+        thread_tools.Thread(stop_worker).start()
 
 
 class Video(object):
@@ -268,12 +261,11 @@ class Thumbnail(object):
     cam_list = None
     interval = config.getint('thumbnail', 'interval')
 
-    class WorkerThread(threading.Thread):
+    class WorkerThread(thread_tools.Thread):
         def __init__(self, id):
             super(Thumbnail.WorkerThread, self).__init__()
             self.id = id
             self.proc = self._open_proc()
-            self.daemon = True
 
         def _open_proc(self):
             """ Select stream and open process
@@ -383,9 +375,7 @@ class Thumbnail(object):
 
     @classmethod
     def start_download(cls):
-        main_th = threading.Thread(target=cls.main_worker)
-        main_th.daemon = True
-        main_th.start()
+        thread_tools.Thread(cls.main_worker).start()
 
     @classmethod
     def stop_download(cls):
