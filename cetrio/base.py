@@ -1,3 +1,4 @@
+import re
 import time
 import subprocess
 import os
@@ -379,20 +380,33 @@ class Thumbnail(object):
         if seek is not None:
             out_opt += ' -ss ' + str(seek)
 
+        resize_opt = config.get('thumbnail', 'resize_opt')
+        sizes = config.get('thumbnail', 'sizes')
+        sizes = re.findall(r'(\w+):(\w+)', sizes)
+
+        resize = [''] + [resize_opt.format(s[1]) for s in sizes]
+        names = [''] + ['-' + s[0] for s in sizes]
+
         # If fetching thumbnail from origin server, will need the camera
         # id that is different from camera name.
         id = name
         if origin:
             id = origin.get_id(name)
 
-        return ffmpeg.cmd(
+        dir = config.get('thumbnail', 'dir')
+        format = config.get('thumbnail', 'format')
+
+        outputs = [
+            os.path.join(dir,'{0}{1}.{2}'.format(id, name, format))
+            for name in names
+        ]
+
+        return ffmpeg.cmd_outputs(
             config.get('thumbnail', 'input_opt'),
             source.format(name),
             out_opt,
-            os.path.join(
-                config.get('thumbnail', 'dir'),
-                '{0}.{1}'.format(id, config.get('thumbnail', 'format'))
-            )
+            resize,
+            outputs
         )
 
     @classmethod
