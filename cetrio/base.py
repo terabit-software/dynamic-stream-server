@@ -406,8 +406,8 @@ class Thumbnail(object):
         format = config.get('thumbnail', 'format')
 
         outputs = [
-            os.path.join(dir,'{0}{1}.{2}'.format(id, name, format))
-            for name in names
+            os.path.join(dir,'{0}{1}.{2}'.format(id, _name, format))
+            for _name in names
         ]
 
         return ffmpeg.cmd_outputs(
