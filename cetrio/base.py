@@ -270,6 +270,7 @@ class Thumbnail(object):
             self.id = id
             self.timeout = timeout
             self.proc = None
+            self.lock = None
 
         def _open_proc(self):
             """ Select stream and open process
@@ -298,6 +299,8 @@ class Thumbnail(object):
         def _close_proc(self):
             """ Kill the open process.
             """
+            if self.proc.poll() is not None:
+                return
             try:
                 self.proc.kill()
                 self.proc.wait()
@@ -312,18 +315,24 @@ class Thumbnail(object):
                       thread as the timeout).
                 Returns the process output code.
             """
-            with Thumbnail.lock:
+            self.lock = thread_tools.Condition.from_condition(Thumbnail.lock)
+            with self.lock:
                 if not Thumbnail.run:
                     return
 
                 self.proc = self._open_proc()
                 def waiter():
                     with Thumbnail.lock:
-                        Thumbnail.lock.wait(self.timeout)
+                        thread_tools.Condition.wait_for_any(
+                            [Thumbnail.lock, self.lock], self.timeout
+                        )
                         self._close_proc()
                 thread_tools.Thread(waiter).start()
 
             self.proc.communicate()
+            with self.lock:
+                self.lock.notify_all()
+
             return self.proc.poll()
 
     @classmethod
