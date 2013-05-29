@@ -1,11 +1,56 @@
+import sys
 import threading
-from time import time
+from time import time, sleep
 from collections import deque
 from itertools import islice
 
 
 Lock = threading.Lock
 RLock = threading.Lock
+
+
+if sys.version_info < (3, 2):
+    class Lock(object):
+
+        def __init__(self):
+            self._lock = threading.Lock()
+
+        def release(self):
+            return self._lock.release()
+
+        def __enter__(self):
+            return self._lock.__enter__()
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return self._lock.__exit__(exc_type, exc_val, exc_tb)
+
+        def __getattr__(self, item):
+            return getattr(self._lock, item)
+
+        # Hook for acquire to block with timeout on old Python versions
+        def acquire(self, blocking=True, timeout=-1):
+            if not blocking and timeout > 0:
+                raise RuntimeError('Cannot have a timeout when not blocking.')
+
+            if not blocking:
+                return self._lock.acquire(False)
+
+            if timeout < 0:
+                return self._lock.acquire(True)
+
+            endtime = time() + timeout
+            delay = 0.0005 # 500us
+            gotit = False
+            while True:
+                gotit = self._lock.acquire(False)
+                if gotit:
+                    break
+                remaining = endtime - time()
+                if remaining <= 0:
+                    break
+                delay = min(delay * 2, remaining, .05)
+                sleep(delay)
+            return gotit
 
 
 class Condition(object):
