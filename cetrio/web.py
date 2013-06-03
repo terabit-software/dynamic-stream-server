@@ -1,5 +1,4 @@
 import time
-import threading
 try:
     # Python 3
     from http import server
@@ -18,13 +17,19 @@ class Handler(server.BaseHTTPRequestHandler):
     timeout = config.getint('local', 'http_client_timeout')
     max_timeout = config.getint('local', 'http_client_timeout_max')
 
-    def do_GET(self):
+    def handle_information(self):
         info = urlparse.urlparse(self.path)
-        data = info.path.strip('/').split('/')
-        id, action = data[:2]
+        try:
+            data = info.path.strip('/').split('/')
+            id, action = data[:2]
+        except Exception:
+            return 404
 
         if action == 'start':
-            base.Video.start(id)
+            try:
+                base.Video.start(id)
+            except KeyError:
+                return 404
         elif action == 'http':
             try:
                 timeout = int(data[2])
@@ -32,9 +37,24 @@ class Handler(server.BaseHTTPRequestHandler):
                 timeout = self.timeout
             timeout = min(timeout, self.max_timeout)
 
-            base.Video.start(id, http_wait=timeout)
+            try:
+                base.Video.start(id, http_wait=timeout)
+            except KeyError:
+                return 404
         else:
             base.Video.stop(id)
+        return 200
+
+    def do_GET(self):
+        try:
+            code = self.handle_information()
+        except Exception as e:
+            print('Error on request handling: %r' % e)
+            self.send_response(500)
+        else:
+            self.send_response(code)
+        finally:
+            self.end_headers()
 
     do_POST = do_GET
 
