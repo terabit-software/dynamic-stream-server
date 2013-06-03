@@ -1,6 +1,5 @@
 import re
 import time
-import subprocess
 import os
 try:
     # Python 3
@@ -14,6 +13,7 @@ from config import config
 import ffmpeg
 import streams
 import thread_tools
+import process_tools
 
 
 def run_proc(id, cmd, mode):
@@ -22,9 +22,9 @@ def run_proc(id, cmd, mode):
     """
     log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, id))
     with open(log, 'w') as f:
-        return subprocess.Popen(
+        return process_tools.Popen(
             cmd,
-            stdout=subprocess.PIPE,
+            stdout=process_tools.PIPE,
             stderr=f
         )
 
@@ -141,24 +141,24 @@ class Camera(object):
         """
         def worker():
             self.proc_run = True
-            self.proc = self.fn()
-            pid = self.proc and self.proc.pid
-            print(self._proc_msg(pid, 'started'))
+            with self.fn() as self.proc:
+                pid = self.proc and self.proc.pid
+                print(self._proc_msg(pid, 'started'))
 
-            while True:
-                self.proc.wait()
-                self.proc = None
-                if self.proc_run:
-                    print(self._proc_msg(pid, 'died'))
-                    time.sleep(self.reload_timeout)
+                while True:
+                    self.proc.wait()
+                    self.proc = None
                     if self.proc_run:
-                        # It might be killed after waiting
-                        self.proc = self.fn()
-                        pid = self.proc and self.proc.pid
-                        print(self._proc_msg(pid, 'restarted'))
-                        continue
-                print(self._proc_msg(pid, 'stopped'))
-                break
+                        print(self._proc_msg(pid, 'died'))
+                        time.sleep(self.reload_timeout)
+                        if self.proc_run:
+                            # It might be killed after waiting
+                            self.proc = self.fn()
+                            pid = self.proc and self.proc.pid
+                            print(self._proc_msg(pid, 'restarted'))
+                            continue
+                    print(self._proc_msg(pid, 'stopped'))
+                    break
 
         self.thread = thread_tools.Thread(worker).start()
 
