@@ -13,10 +13,10 @@ def select_provider(id):
     return providers[id]
 
 
-class BaseRemoteCamera(object):
-    """ Basic camera system with a text identifier and a numbering
+class BaseStreamProvider(object):
+    """ Basic stream provider system with a text identifier and a number
         identifier.
-        Subclasses must provide a `in_stream` URI and the text identifier.
+        Subclasses must provide an `in_stream` URI and the text identifier.
         The `cam_list` variable should have the number id's to be used.
     """
     conf = None
@@ -85,17 +85,17 @@ class BaseRemoteCamera(object):
         return cls.identifier + str(camera)
 
 
-class NamedRemoteCamera(BaseRemoteCamera):
-    """ Subclass for camera System with names as identifiers instead
+class NamedStreamProvider(BaseStreamProvider):
+    """ Subclass for provider system with names as identifiers instead
         of numbers or if you want to create a different numbering
-        system.
+        scheme.
 
         The `cam_list` variable must be given and contain the list of
         identifiers.
     """
     @classmethod
     def _cameras(cls):
-        super(NamedRemoteCamera, cls)._cameras()
+        super(NamedStreamProvider, cls)._cameras()
         return list(range(len(cls.cam_list)))
 
     @classmethod
@@ -107,7 +107,7 @@ class NamedRemoteCamera(BaseRemoteCamera):
         return cls.identifier + str(cls.cam_list.index(camera))
 
 
-class Cetrio(BaseRemoteCamera):
+class Cetrio(BaseStreamProvider):
     conf = 'cetrio'
     identifier = 'C'
     in_stream = '{0}{1}/{2} {3}'.format(
@@ -122,7 +122,7 @@ class Cetrio(BaseRemoteCamera):
         return [c['id'] for c in _cetrio_cameras.get_cameras()]
 
 
-class Fundao(NamedRemoteCamera):
+class Fundao(NamedStreamProvider):
     conf = 'fundao'
     identifier = 'F'
     in_stream = config.get(conf, 'addr')
@@ -135,6 +135,6 @@ providers = dict(
     (cls.identifier, cls)
     for cls in globals().values()
     if isinstance(cls, type) and \
-       issubclass(cls, BaseRemoteCamera) and \
+       issubclass(cls, BaseStreamProvider) and \
        cls.conf is not None # remove base classes
 )
