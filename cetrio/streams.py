@@ -67,6 +67,27 @@ class BaseRemoteCamera(object):
         return cls.identifier + str(camera)
 
 
+class NamedRemoteCamera(BaseRemoteCamera):
+    """ Subclass for camera System with names as identifiers instead
+        of numbers or if you want to create a different numbering
+        system.
+
+        The `_cam` variable must be given and contain the list of
+        identifiers.
+    """
+    @classmethod
+    def _cameras(cls):
+        return list(range(len(cls._cam)))
+
+    @classmethod
+    def get_camera(cls, id):
+        return cls._cam[cls._number_id(id)]
+
+    @classmethod
+    def get_id(cls, camera):
+        return cls.identifier + str(cls._cam.index(camera))
+
+
 class Cetrio(BaseRemoteCamera):
     conf = 'cetrio'
     identifier = 'C'
@@ -85,23 +106,11 @@ class Cetrio(BaseRemoteCamera):
         return cls._cam
 
 
-class Fundao(BaseRemoteCamera):
+class Fundao(NamedRemoteCamera):
     conf = 'fundao'
     identifier = 'F'
     in_stream = config.get(conf, 'addr')
     _cam = config.get(conf, 'cameras').split()
-
-    @classmethod
-    def _cameras(cls):
-        return list(range(len(cls._cam)))
-
-    @classmethod
-    def get_camera(cls, id):
-        return cls._cam[cls._number_id(id)]
-
-    @classmethod
-    def get_id(cls, camera):
-        return cls.identifier + str(cls._cam.index(camera))
 
 
 # Select stream provider classes from global namespace.
