@@ -31,8 +31,8 @@ def run_proc(id, cmd, mode):
 
 class HTTPClient(object):
     """ Emulate the behaviour of a RTMP client when there's an HTTP access
-        for a certain camera. If no other HTTP access is made within the
-        timeout period, the `Camera` instance will be decremented.
+        for a certain Stream. If no other HTTP access is made within the
+        timeout period, the `Stream` instance will be decremented.
     """
     def __init__(self, parent):
         self.lock = thread_tools.Condition()
@@ -63,7 +63,7 @@ class HTTPClient(object):
     __nonzero__ = __bool__
 
 
-class Camera(object):
+class Stream(object):
     run_timeout = config.getint('ffmpeg', 'timeout')
     reload_timeout = config.getint('ffmpeg', 'reload')
 
@@ -197,17 +197,17 @@ class Video(object):
 
     @classmethod
     def start(cls, id, increment=1, http_wait=None):
-        cls.get_camera(id).inc(increment, http_wait=http_wait)
+        cls.get_stream(id).inc(increment, http_wait=http_wait)
 
     @classmethod
     def stop(cls, id):
-        cls.get_camera(id).dec()
+        cls.get_stream(id).dec()
 
     @classmethod
-    def get_camera(cls, id):
+    def get_stream(cls, id):
         cam = cls._data.get(id)
         if cam is None:
-            cam = Camera(id)
+            cam = Stream(id)
             cls._data[id] = cam
         return cam
 
@@ -252,7 +252,7 @@ class Video(object):
             cls.start(stream['name'], nclients)
 
     @classmethod
-    def terminate_cameras(cls):
+    def terminate_streams(cls):
         for cam in cls._data.values():
             cam.proc_stop(now=True)
 
@@ -283,8 +283,8 @@ class Thumbnail(object):
             origin = None
             id = self.id
 
-            # Use local connection if camera is already running.
-            if Video.get_camera(self.id).alive:
+            # Use local connection if stream is already running.
+            if Video.get_stream(self.id).alive:
                 source = provider.out_stream
                 seek = 1
             else:
