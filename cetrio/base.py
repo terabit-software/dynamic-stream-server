@@ -196,10 +196,13 @@ class Stream(object):
 
 class Video(object):
     _data = {}
+    _data_lock = thread_tools.Lock()
+    run = True
 
     @classmethod
     def start(cls, id, increment=1, http_wait=None):
-        cls.get_stream(id).inc(increment, http_wait=http_wait)
+        if cls.run:
+            cls.get_stream(id).inc(increment, http_wait=http_wait)
 
     @classmethod
     def stop(cls, id):
@@ -207,11 +210,12 @@ class Video(object):
 
     @classmethod
     def get_stream(cls, id):
-        cam = cls._data.get(id)
-        if cam is None:
-            cam = Stream(id)
-            cls._data[id] = cam
-        return cam
+        with cls._data_lock:
+            cam = cls._data.get(id)
+            if cam is None:
+                cam = Stream(id)
+                cls._data[id] = cam
+            return cam
 
     @classmethod
     def get_stats(cls):
@@ -255,8 +259,10 @@ class Video(object):
 
     @classmethod
     def terminate_streams(cls):
-        for cam in cls._data.values():
-            cam.proc_stop(now=True)
+        with cls._data_lock:
+            cls.run = False
+            for cam in cls._data.values():
+                cam.proc_stop(now=True)
 
 
 class Thumbnail(object):
