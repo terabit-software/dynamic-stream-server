@@ -19,6 +19,8 @@ import process_tools
 def run_proc(id, cmd, mode):
     """ Open process with error output redirected to file.
         The standart output can be read.
+
+        This should be used as a context manager to close the log file.
     """
     log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, id))
     with open(log, 'w') as f:
@@ -309,12 +311,24 @@ class Thumbnail(object):
             except OSError:
                 pass
 
-        def __call__(self):
+        def _waiter(self):
             """ Wait until the first of these events :
-                    - End of the process;
-                    - Timeout (on a separeted thread);
-                    - User request for termination (on the same separeted
-                      thread as the timeout).
+                    - Process finished;
+                    - Timeout (on another thread);
+                    - User request for termination (at the same thread as
+                      the timeout).
+            """
+            with self.lock:
+                thread_tools.Condition.wait_for_any(
+                    [Thumbnail.lock, self.lock], self.timeout
+                )
+                self._close_proc()
+
+        def __call__(self):
+            """ Opens a new process and sets a waiter with timeout on
+                another thread.
+                Waits for the end of the process (naturally or killed
+                by waiter). Awakes the waiter if process finished first.
                 Returns the process output code.
             """
             self.lock = thread_tools.Condition.from_condition(Thumbnail.lock)
@@ -322,20 +336,14 @@ class Thumbnail(object):
                 if not Thumbnail.run:
                     return
 
-                self.proc = self._open_proc()
-                def waiter():
-                    with Thumbnail.lock:
-                        thread_tools.Condition.wait_for_any(
-                            [Thumbnail.lock, self.lock], self.timeout
-                        )
-                        self._close_proc()
-                thread_tools.Thread(waiter).start()
+            with self._open_proc() as self.proc:
+                thread_tools.Thread(self._waiter).start()
 
-            self.proc.communicate()
-            with self.lock:
-                self.lock.notify_all()
+                self.proc.communicate()
+                with self.lock:
+                    self.lock.notify_all()
 
-            return self.proc.poll()
+                return self.proc.poll()
 
     @classmethod
     def main_worker(cls):
