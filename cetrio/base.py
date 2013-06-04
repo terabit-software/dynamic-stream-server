@@ -141,21 +141,19 @@ class Camera(object):
         """
         def worker():
             self.proc_run = True
-            with self.fn() as self.proc:
-                pid = self.proc and self.proc.pid
-                print(self._proc_msg(pid, 'started'))
-
-                while True:
+            start_msg = 'started'
+            while True:
+                with self.fn() as self.proc:
+                    pid = self.proc and self.proc.pid
+                    print(self._proc_msg(pid, start_msg))
                     self.proc.wait()
                     self.proc = None
-                    if self.proc_run:
+
+                    if self.proc_run:  # Should be running, but isn't
                         print(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
-                        if self.proc_run:
-                            # It might be killed after waiting
-                            self.proc = self.fn()
-                            pid = self.proc and self.proc.pid
-                            print(self._proc_msg(pid, 'restarted'))
+                        if self.proc_run:  # It might have been stopped after waiting
+                            start_msg = 'restarted'
                             continue
                     print(self._proc_msg(pid, 'stopped'))
                     break
