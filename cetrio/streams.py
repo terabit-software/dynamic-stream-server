@@ -17,7 +17,7 @@ class BaseStreamProvider(object):
     """ Basic stream provider system with a text identifier and a number
         identifier.
         Subclasses must provide an `in_stream` URI and the text identifier.
-        The `cam_list` variable should have the number id's to be used.
+        The `stream_list` variable should have the number id's to be used.
     """
     conf = None
     in_stream = None
@@ -26,31 +26,31 @@ class BaseStreamProvider(object):
         config.get('rtmp-server', 'addr'),
         config.get('rtmp-server', 'app')
     ) + '{0}'
-    cam_list = None
+    stream_list = None
 
     @classmethod
     def make_cmd(cls, id):
         """ Generate FFmpeg command to fetch video from
             remote source.
         """
-        cam = cls.get_camera(id)
+        stream = cls.get_stream(id)
         return ffmpeg.cmd(
             config.get(cls.conf, 'input_opt'),
-            cls.in_stream.format(cam),
+            cls.in_stream.format(stream),
             config.get(cls.conf, 'output_opt'),
             cls.out_stream.format(id),
         )
 
     @classmethod
-    def _cameras(cls):
-        if cls.cam_list is None:
-            cls.cam_list = cls.lazy_initialization()
-        return cls.cam_list
+    def _streams(cls):
+        if cls.stream_list is None:
+            cls.stream_list = cls.lazy_initialization()
+        return cls.stream_list
 
     @classmethod
     def lazy_initialization(cls):
         """ Override this method to provide a way to initialize the list
-            of cameras only when asked. This is handy when the list must
+            of streams only when asked. This is handy when the list must
             be fetched from a remote source or might take a long time to
             respond.
             If the list is supplied in the class definition, it may delay
@@ -59,12 +59,12 @@ class BaseStreamProvider(object):
         return []
 
     @classmethod
-    def cameras(cls):
-        return [cls.make_id(x) for x in cls._cameras()]
+    def streams(cls):
+        return [cls.make_id(x) for x in cls._streams()]
 
     @classmethod
     def _number_id(cls, id):
-        """ The id number of a camera without possible class identifier.
+        """ The id number of a stream without possible class identifier.
         """
         return int(re.sub(r'\D', '', id))
 
@@ -75,14 +75,14 @@ class BaseStreamProvider(object):
         return cls.identifier + str(num)
 
     @classmethod
-    def get_camera(cls, id):
-        """ Retrieve camera name based on id.
+    def get_stream(cls, id):
+        """ Retrieve stream name based on id.
         """
         return cls._number_id(id)
 
     @classmethod
-    def get_id(cls, camera):
-        return cls.identifier + str(camera)
+    def get_id(cls, stream):
+        return cls.identifier + str(stream)
 
 
 class NamedStreamProvider(BaseStreamProvider):
@@ -90,21 +90,21 @@ class NamedStreamProvider(BaseStreamProvider):
         of numbers or if you want to create a different numbering
         scheme.
 
-        The `cam_list` variable must be given and contain the list of
+        The `stream_list` variable must be given and contain the list of
         identifiers.
     """
     @classmethod
-    def _cameras(cls):
-        super(NamedStreamProvider, cls)._cameras()
-        return list(range(len(cls.cam_list)))
+    def _streams(cls):
+        super(NamedStreamProvider, cls)._streams()
+        return list(range(len(cls.stream_list)))
 
     @classmethod
-    def get_camera(cls, id):
-        return cls.cam_list[cls._number_id(id)]
+    def get_stream(cls, id):
+        return cls.stream_list[cls._number_id(id)]
 
     @classmethod
-    def get_id(cls, camera):
-        return cls.identifier + str(cls.cam_list.index(camera))
+    def get_id(cls, stream):
+        return cls.identifier + str(cls.stream_list.index(stream))
 
 
 class Cetrio(BaseStreamProvider):
@@ -126,7 +126,7 @@ class Fundao(NamedStreamProvider):
     conf = 'fundao'
     identifier = 'F'
     in_stream = config.get(conf, 'addr')
-    cam_list = config.get(conf, 'cameras').split()
+    stream_list = config.get(conf, 'cameras').split()
 
 
 # Select stream provider classes from global namespace.

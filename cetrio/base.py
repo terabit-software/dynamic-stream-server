@@ -289,7 +289,7 @@ class Thumbnail(object):
                 seek = 1
             else:
                 # If using remote server identifier instead of local.
-                id = provider.get_camera(self.id)
+                id = provider.get_stream(self.id)
                 origin = provider
 
             return run_proc(
@@ -339,7 +339,7 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
-        cams = [p.cameras() for p in streams.providers.values()]
+        cams = [p.streams() for p in streams.providers.values()]
         cls.cam_list = [item for sublist in cams for item in sublist]
 
         try:
@@ -398,8 +398,8 @@ class Thumbnail(object):
         resize = [''] + [resize_opt.format(s[1]) for s in sizes]
         names = [''] + ['-' + s[0] for s in sizes]
 
-        # If fetching thumbnail from origin server, will need the camera
-        # id that is different from camera name.
+        # If fetching thumbnail from origin server, will need the stream
+        # id that is different from stream name.
         id = name
         if origin:
             id = origin.get_id(name)
