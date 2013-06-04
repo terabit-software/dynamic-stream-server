@@ -14,6 +14,11 @@ def select_provider(id):
 
 
 class BaseRemoteCamera(object):
+    """ Basic camera system with a text identifier and a numbering
+        identifier.
+        Subclasses must provide a `in_stream` URI and the text identifier.
+        The `_cam` variable should have the number id's to be used.
+    """
     conf = None
     in_stream = None
     identifier = None
@@ -21,7 +26,7 @@ class BaseRemoteCamera(object):
         config.get('rtmp-server', 'addr'),
         config.get('rtmp-server', 'app')
     ) + '{0}'
-    _cam = []
+    _cam = None
 
     @classmethod
     def make_cmd(cls, id):
@@ -38,7 +43,20 @@ class BaseRemoteCamera(object):
 
     @classmethod
     def _cameras(cls):
+        if cls._cam is None:
+            cls._cam = cls.lazy_initialization()
         return cls._cam
+
+    @classmethod
+    def lazy_initialization(cls):
+        """ Override this method to provide a way to initialize the list
+            of cameras only when asked. This is handy when the list must
+            be fetched from a remote source or might take a long time to
+            respond.
+            If the list is supplied in the class definition, it may delay
+            the program start needlessly.
+        """
+        return []
 
     @classmethod
     def cameras(cls):
@@ -77,6 +95,7 @@ class NamedRemoteCamera(BaseRemoteCamera):
     """
     @classmethod
     def _cameras(cls):
+        super(NamedRemoteCamera, cls)._cameras()
         return list(range(len(cls._cam)))
 
     @classmethod
@@ -97,13 +116,10 @@ class Cetrio(BaseRemoteCamera):
         config.get(conf, 'stream'),
         config.get(conf, 'data'),
     )
-    _cam = None
 
     @classmethod
-    def _cameras(cls):
-        if cls._cam is None:
-            cls._cam = [c['id'] for c in _cetrio_cameras.get_cameras()]
-        return cls._cam
+    def lazy_initialization(cls):
+        return [c['id'] for c in _cetrio_cameras.get_cameras()]
 
 
 class Fundao(NamedRemoteCamera):
