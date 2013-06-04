@@ -17,7 +17,7 @@ class BaseRemoteCamera(object):
     """ Basic camera system with a text identifier and a numbering
         identifier.
         Subclasses must provide a `in_stream` URI and the text identifier.
-        The `_cam` variable should have the number id's to be used.
+        The `cam_list` variable should have the number id's to be used.
     """
     conf = None
     in_stream = None
@@ -26,7 +26,7 @@ class BaseRemoteCamera(object):
         config.get('rtmp-server', 'addr'),
         config.get('rtmp-server', 'app')
     ) + '{0}'
-    _cam = None
+    cam_list = None
 
     @classmethod
     def make_cmd(cls, id):
@@ -43,9 +43,9 @@ class BaseRemoteCamera(object):
 
     @classmethod
     def _cameras(cls):
-        if cls._cam is None:
-            cls._cam = cls.lazy_initialization()
-        return cls._cam
+        if cls.cam_list is None:
+            cls.cam_list = cls.lazy_initialization()
+        return cls.cam_list
 
     @classmethod
     def lazy_initialization(cls):
@@ -90,21 +90,21 @@ class NamedRemoteCamera(BaseRemoteCamera):
         of numbers or if you want to create a different numbering
         system.
 
-        The `_cam` variable must be given and contain the list of
+        The `cam_list` variable must be given and contain the list of
         identifiers.
     """
     @classmethod
     def _cameras(cls):
         super(NamedRemoteCamera, cls)._cameras()
-        return list(range(len(cls._cam)))
+        return list(range(len(cls.cam_list)))
 
     @classmethod
     def get_camera(cls, id):
-        return cls._cam[cls._number_id(id)]
+        return cls.cam_list[cls._number_id(id)]
 
     @classmethod
     def get_id(cls, camera):
-        return cls.identifier + str(cls._cam.index(camera))
+        return cls.identifier + str(cls.cam_list.index(camera))
 
 
 class Cetrio(BaseRemoteCamera):
@@ -126,7 +126,7 @@ class Fundao(NamedRemoteCamera):
     conf = 'fundao'
     identifier = 'F'
     in_stream = config.get(conf, 'addr')
-    _cam = config.get(conf, 'cameras').split()
+    cam_list = config.get(conf, 'cameras').split()
 
 
 # Select stream provider classes from global namespace.
