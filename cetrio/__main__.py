@@ -13,8 +13,8 @@ def main():
         server.stop()
         print('Server Closed')
 
-    print('Stopping cameras...')
-    base.Video.terminate_cameras()
+    print('Stopping streams...')
+    base.Video.terminate_streams()
     print('Done!')
 
     print('Stopping thumbnail download...')
