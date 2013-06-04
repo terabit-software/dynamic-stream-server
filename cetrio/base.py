@@ -211,11 +211,11 @@ class Video(object):
     @classmethod
     def get_stream(cls, id):
         with cls._data_lock:
-            cam = cls._data.get(id)
-            if cam is None:
-                cam = Stream(id)
-                cls._data[id] = cam
-            return cam
+            stream = cls._data.get(id)
+            if stream is None:
+                stream = Stream(id)
+                cls._data[id] = stream
+            return stream
 
     @classmethod
     def get_stats(cls):
@@ -239,13 +239,13 @@ class Video(object):
             raise NameError('No app named %r' % app)
 
         # App clients
-        streams = app.get('stream')
-        if streams is None:
+        stream_list = app.get('stream')
+        if stream_list is None:
             return
-        if isinstance(streams, dict):
-            streams = [streams]
+        if isinstance(stream_list, dict):
+            stream_list = [stream_list]
 
-        for stream in streams:
+        for stream in stream_list:
             # Stream clients
             nclients = int(stream['nclients'])
 
@@ -261,8 +261,8 @@ class Video(object):
     def terminate_streams(cls):
         with cls._data_lock:
             cls.run = False
-            for cam in cls._data.values():
-                cam.proc_stop(now=True)
+            for strm in cls._data.values():
+                strm.proc_stop(now=True)
 
 
 class Thumbnail(object):
@@ -270,7 +270,7 @@ class Thumbnail(object):
     clean = True
     lock = thread_tools.Condition()
 
-    cam_list = None
+    stream_list = None
     interval = config.getint('thumbnail', 'interval')
     workers = config.getint('thumbnail', 'workers')
     timeout = config.getint('thumbnail', 'timeout')
@@ -353,8 +353,8 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
-        cams = [p.streams() for p in streams.providers.values()]
-        cls.cam_list = [item for sublist in cams for item in sublist]
+        stream_list = [p.streams() for p in streams.providers.values()]
+        cls.stream_list = [item for sublist in stream_list for item in sublist]
 
         try:
             delay = config.getint('thumbnail', 'start_after')
@@ -372,15 +372,15 @@ class Thumbnail(object):
             with futures.ThreadPoolExecutor(cls.workers) as executor:
                 map = dict(
                     (executor.submit(cls.Worker(x, cls.timeout)), x)
-                    for x in cls.cam_list
+                    for x in cls.stream_list
                 )
                 done = {}
                 for future in futures.as_completed(map):
                     done[map[future]] = future.result()
-                error = [x for x in cls.cam_list if done[x] != 0]
+                error = [x for x in cls.stream_list if done[x] != 0]
 
                 if cls.run: # Show stats
-                    cams = len(cls.cam_list)
+                    cams = len(cls.stream_list)
                     print('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
                     if error:
                         print('Could not fetch:\n' + ', '.join(error))
