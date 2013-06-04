@@ -222,7 +222,11 @@ class Video(object):
 
     @classmethod
     def initialize_from_stats(cls):
-        stats = cls.get_stats()['server']['application']
+        try:
+            stats = cls.get_stats()['server']['application']
+        except IOError:
+            return
+
         if isinstance(stats, dict): stats = [stats]
         app = config.get('rtmp-server', 'app')
         try:
