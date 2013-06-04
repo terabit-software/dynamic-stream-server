@@ -5,6 +5,14 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
+import sys
+install_requires = []
+if sys.version_info < (3, 2):
+    install_requires = [
+        'futures',
+        'configparser',
+    ]
+
 
 setup(
     name='Dynamic Stream Server',
@@ -17,7 +25,5 @@ setup(
     author_email = 'jbvsmo@gmail.com',
     url = 'https://bitbucket.org/jbvsmo/dynamic-stream-server',
     packages = ['cetrio'],
-    requires = [
-        'futures',
-    ]
+    install_requires = install_requires,
 )
