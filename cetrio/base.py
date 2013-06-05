@@ -22,7 +22,7 @@ def run_proc(id, cmd, mode):
 
         This should be used as a context manager to close the log file.
     """
-    log = os.path.join(config.get('log', 'dir'), '{0}-{1}'.format(mode, id))
+    log = os.path.join(config['log']['dir'], '{0}-{1}'.format(mode, id))
     with open(log, 'w') as f:
         return process_tools.Popen(
             cmd,
@@ -66,8 +66,9 @@ class HTTPClient(object):
 
 
 class Stream(object):
-    run_timeout = config.getint('ffmpeg', 'timeout')
-    reload_timeout = config.getint('ffmpeg', 'reload')
+    _ffmpeg =  config['ffmpeg']
+    run_timeout = _ffmpeg.getint('timeout')
+    reload_timeout = _ffmpeg.getint('reload')
 
     def __init__(self, id, timeout=run_timeout):
         self.lock = thread_tools.Lock()
@@ -219,8 +220,9 @@ class Video(object):
 
     @classmethod
     def get_stats(cls):
-        addr = config.get('http-server', 'addr')
-        stat = config.get('http-server', 'stat_url')
+        http = config['http-server']
+        addr = http['addr']
+        stat = http['stat_url']
         data = urlopen(addr + stat).read()
         return noxml.load(data)
 
@@ -232,7 +234,7 @@ class Video(object):
             return
 
         if isinstance(stats, dict): stats = [stats]
-        app = config.get('rtmp-server', 'app')
+        app = config['rtmp-server']['app']
         try:
             app = next(x['live'] for x in stats if x['name'] == app)
         except StopIteration:
@@ -271,9 +273,10 @@ class Thumbnail(object):
     lock = thread_tools.Condition()
 
     stream_list = None
-    interval = config.getint('thumbnail', 'interval')
-    workers = config.getint('thumbnail', 'workers')
-    timeout = config.getint('thumbnail', 'timeout')
+    _thumb = config['thumbnail']
+    interval = _thumb.getint('interval')
+    workers = _thumb.getint('workers')
+    timeout = _thumb.getint('timeout')
 
     class Worker(object):
         def __init__(self, id, timeout):
@@ -357,7 +360,7 @@ class Thumbnail(object):
         cls.stream_list = [item for sublist in stream_list for item in sublist]
 
         try:
-            delay = config.getint('thumbnail', 'start_after')
+            delay = cls._thumb.getint('start_after')
         except Exception:
             delay = 0
         with cls.lock:
@@ -401,13 +404,13 @@ class Thumbnail(object):
     def make_cmd(cls, name, source, seek=None, origin=None):
         """ Generate FFmpeg command for thumbnail generation.
         """
-        out_opt = config.get('thumbnail', 'output_opt')
+        thumb = cls._thumb
+        out_opt = thumb['output_opt']
         if seek is not None:
             out_opt += ' -ss ' + str(seek)
 
-        resize_opt = config.get('thumbnail', 'resize_opt')
-        sizes = config.get('thumbnail', 'sizes')
-        sizes = re.findall(r'(\w+):(\w+)', sizes)
+        resize_opt = thumb['resize_opt']
+        sizes = re.findall(r'(\w+):(\w+)', thumb['sizes'])
 
         resize = [''] + [resize_opt.format(s[1]) for s in sizes]
         names = [''] + ['-' + s[0] for s in sizes]
@@ -418,16 +421,16 @@ class Thumbnail(object):
         if origin:
             id = origin.get_id(name)
 
-        dir = config.get('thumbnail', 'dir')
-        format = config.get('thumbnail', 'format')
-
         outputs = [
-            os.path.join(dir,'{0}{1}.{2}'.format(id, _name, format))
+            os.path.join(
+                thumb['dir'],
+                '{0}{1}.{2}'.format(id, _name, thumb['format'])
+            )
             for _name in names
         ]
 
         return ffmpeg.cmd_outputs(
-            config.get('thumbnail', 'input_opt'),
+            thumb['input_opt'],
             source.format(name),
             out_opt,
             resize,

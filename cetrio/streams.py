@@ -19,12 +19,13 @@ class BaseStreamProvider(object):
         Subclasses must provide an `in_stream` URI and the text identifier.
         The `stream_list` variable should have the number id's to be used.
     """
-    conf = None
+    conf = None  # Dictionary like object: configparser section
     in_stream = None
     identifier = None
+    _rtmp_server = config['rtmp-server']
     out_stream = '{0}{1}/'.format(
-        config.get('rtmp-server', 'addr'),
-        config.get('rtmp-server', 'app')
+        _rtmp_server['addr'],
+        _rtmp_server['app']
     ) + '{0}'
     stream_list = None
 
@@ -35,9 +36,9 @@ class BaseStreamProvider(object):
         """
         stream = cls.get_stream(id)
         return ffmpeg.cmd(
-            config.get(cls.conf, 'input_opt'),
+            cls.conf['input_opt'],
             cls.in_stream.format(stream),
-            config.get(cls.conf, 'output_opt'),
+            cls.conf['output_opt'],
             cls.out_stream.format(id),
         )
 
@@ -108,13 +109,10 @@ class NamedStreamProvider(BaseStreamProvider):
 
 
 class Cetrio(BaseStreamProvider):
-    conf = 'cetrio'
     identifier = 'C'
+    conf = config['cetrio']
     in_stream = '{0}{1}/{2} {3}'.format(
-        config.get(conf, 'addr'),
-        config.get(conf, 'app'),
-        config.get(conf, 'stream'),
-        config.get(conf, 'data'),
+        conf['addr'], conf['app'], conf['stream'], conf['data'],
     )
 
     @classmethod
@@ -123,10 +121,10 @@ class Cetrio(BaseStreamProvider):
 
 
 class Fundao(NamedStreamProvider):
-    conf = 'fundao'
     identifier = 'F'
-    in_stream = config.get(conf, 'addr')
-    stream_list = config.get(conf, 'cameras').split()
+    conf = config['fundao']
+    in_stream = conf['addr']
+    stream_list = conf['cameras'].split()
 
 
 # Select stream provider classes from global namespace.
