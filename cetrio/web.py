@@ -2,10 +2,12 @@ import time
 try:
     # Python 3
     from http import server
+    import socketserver
     import urllib.parse as urlparse
     from urllib.request import urlopen
 except ImportError:
     import BaseHTTPServer as server
+    import SocketServer as socketserver
     import urlparse
     from urllib2 import urlopen
 
@@ -59,11 +61,12 @@ class Handler(server.BaseHTTPRequestHandler):
     do_POST = do_GET
 
 
-class Server(server.HTTPServer):
+class Server(socketserver.ThreadingMixIn, server.HTTPServer):
     host = config.get('local', 'addr')
     port = config.getint('local', 'port')
 
     tcp_retry = 10 #seconds
+    daemon_threads = True
 
     def __init__(self):
         pass
