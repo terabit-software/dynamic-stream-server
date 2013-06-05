@@ -1,11 +1,12 @@
+import sys
 try:
     from setuptools import setup
 except ImportError:
-    from ez_setup import use_setuptools
+    from distribute_setup import use_setuptools
     use_setuptools()
     from setuptools import setup
 
-import sys
+
 install_requires = []
 if sys.version_info < (3, 2):
     install_requires = [
@@ -13,6 +14,9 @@ if sys.version_info < (3, 2):
         'configparser',
     ]
 
+install_requires += [
+    'setuptools',
+]
 
 setup(
     name='Dynamic Stream Server',
@@ -24,6 +28,6 @@ setup(
     ],
     author_email = 'jbvsmo@gmail.com',
     url = 'https://bitbucket.org/jbvsmo/dynamic-stream-server',
-    packages = ['cetrio'],
+    packages = [],
     install_requires = install_requires,
 )
