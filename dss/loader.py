@@ -1,7 +1,6 @@
 # coding: utf-8
 import json
 from os import path
-import os
 import makeobj
 
 try:
@@ -9,7 +8,7 @@ try:
 except ImportError:
     from urllib2 import urlopen
 
-from config import config, dirname
+from .config import config, dirname
 
 
 def _get_from_file(path):
@@ -45,7 +44,7 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
     tmp = config.get('cache', 'dir')
 
     if Place.cache in places:
-        basename = os.path.basename(name)
+        basename = path.basename(name)
         tmp = path.join(tmp, basename)
 
         try:

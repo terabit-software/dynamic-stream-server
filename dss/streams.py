@@ -1,10 +1,10 @@
 import glob
 import os
-import ffmpeg
-from config import Parser, config, dirname
 import re
-import loader
 
+from .config import Parser, config, dirname
+from . import loader
+from . import ffmpeg
 
 def select_provider(id):
     """ Select provider based on identifier.

@@ -11,8 +11,8 @@ except ImportError:
     import urlparse
     from urllib2 import urlopen
 
-import base
-from config import config
+from . import base
+from .config import config
 
 
 class Handler(server.BaseHTTPRequestHandler):
