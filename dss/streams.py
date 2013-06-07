@@ -112,7 +112,7 @@ class NamedStreamProvider(BaseStreamProvider):
 
 def create_provider(cls_name, conf):
     strm = conf['streams']
-    mode = set(x.strip() for x in strm['mode'].split(','))
+    mode = set(strm.get_split('mode'))
 
     cls = BaseStreamProvider
     if 'named' in mode:
@@ -121,8 +121,7 @@ def create_provider(cls_name, conf):
     attr = {}
     if 'list' in mode:
         def fetch_function():
-            return [x.split()[0].strip(',') for x in strm['list'].splitlines() if x]
-            # FIXME pegar dados do proprio arquivo
+            return [x[0] for x in strm.get_multiline_list('list')]
     else:
         fetch = []
         url = None
