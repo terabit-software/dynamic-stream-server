@@ -5,18 +5,18 @@
 import os
 import configparser
 
-def _parser():
+def Parser():
     return configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation()
     )
 
 dirname = os.path.abspath(os.path.dirname(__file__))
 
-config = _parser()
-config.read(os.path.join(dirname, 'cetrio.conf'))
+config = Parser()
+config.read(os.path.join(dirname, 'global.conf'))
 
 # Update system wide configs with local values.
-_local_config = _parser()
+_local_config = Parser()
 try:
     _local_config.read(os.path.join(dirname, 'local.conf'))
 except Exception:
