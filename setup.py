@@ -6,16 +6,19 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
+py_version = sys.version_info[:2]
 
 install_requires = []
-if sys.version_info < (3, 2):
-    install_requires = [
+if py_version < (3, 2):
+    install_requires += [
         'futures',
         'configparser',
     ]
 
+# All versions
 install_requires += [
     'setuptools',
+    'makeobj',
 ]
 
 setup(

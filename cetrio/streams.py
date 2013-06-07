@@ -2,6 +2,7 @@ import ffmpeg
 from config import config
 import re
 import cameras as _cetrio_cameras
+import loader
 
 
 def select_provider(id):
