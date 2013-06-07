@@ -110,4 +110,60 @@ class NamedStreamProvider(BaseStreamProvider):
         return cls.identifier + str(cls.stream_list.index(stream))
 
 
+def create_provider(cls_name, conf):
+    strm = conf['streams']
+    mode = set(x.strip() for x in strm['mode'].split(','))
+
+    cls = BaseStreamProvider
+    if 'named' in mode:
+        cls = NamedStreamProvider
+
+    attr = {}
+    if 'list' in mode:
+        def fetch_function():
+            return [x.split()[0].strip(',') for x in strm['list'].splitlines() if x]
+            # FIXME pegar dados do proprio arquivo
+    else:
+        fetch = []
+        url = None
+        parser = None
+        name = None
+        if 'download' in mode:
+            fetch.append(loader.Place.url)
+            url = strm['url']
+            parser = strm['parser'] #FIXME load the funtion!
+        if 'cache' in mode:
+            fetch.append(loader.Place.cache)
+            name = strm.get('file', cls_name + '-streams.json')
+        if 'file' in mode:
+            fetch.append(loader.Place.file)
+            join = os.path.join
+            name = join(join(dirname, 'providers'), strm['file'])
+
+        def fetch_function():
+            return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
+
+    if 'lazy' in mode:
+        attr['lazy_initialization'] = classmethod(lambda cls: fetch_function())
+        attr['stream_list'] = None
+    else:
+        attr['stream_list'] = fetch_function()
+
+    conf = conf['base']
+    attr.update(
+        identifier = conf['identifier'],
+        in_stream = conf['access'],
+        conf = conf
     )
+    return type(cls_name, (cls,), attr)
+
+
+# Load providers from "conf" files on providers/ dir
+providers = {}
+for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
+    parser = Parser()
+    parser.read(conf)
+    name = os.path.splitext(os.path.basename(conf))[0]
+    prov = create_provider(name, parser)
+    # noinspection PyUnresolvedReferences
+    providers[prov.identifier] = prov
