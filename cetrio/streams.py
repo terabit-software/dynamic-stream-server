@@ -1,7 +1,8 @@
+import glob
+import os
 import ffmpeg
-from config import config
+from config import Parser, config, dirname
 import re
-import cameras as _cetrio_cameras
 import loader
 
 
@@ -109,31 +110,4 @@ class NamedStreamProvider(BaseStreamProvider):
         return cls.identifier + str(cls.stream_list.index(stream))
 
 
-class Cetrio(BaseStreamProvider):
-    identifier = 'C'
-    conf = config['cetrio']
-    in_stream = '{0}{1}/{2} {3}'.format(
-        conf['addr'], conf['app'], conf['stream'], conf['data'],
     )
-
-    @classmethod
-    def lazy_initialization(cls):
-        return [c['id'] for c in _cetrio_cameras.get_cameras()]
-
-
-class Fundao(NamedStreamProvider):
-    identifier = 'F'
-    conf = config['fundao']
-    in_stream = conf['addr']
-    stream_list = conf['cameras'].split()
-
-
-# Select stream provider classes from global namespace.
-# noinspection PyUnresolvedReferences
-providers = dict(
-    (cls.identifier, cls)
-    for cls in globals().values()
-    if isinstance(cls, type) and \
-       issubclass(cls, BaseStreamProvider) and \
-       cls.conf is not None # remove base classes
-)
