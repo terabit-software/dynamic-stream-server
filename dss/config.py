@@ -58,7 +58,6 @@ def _pseudo_list_load(value):
     return [_ast_load(x) for x in tokens]
 
 
-
 class Parser(configparser.ConfigParser):
 
     def __init__(self, *args, **kw):
@@ -80,9 +79,7 @@ class Parser(configparser.ConfigParser):
 
     def get_multiline_list(self, section, option):
         value = self.get(section, option)
-        a = [_pseudo_list_load(x) for x in value.splitlines() if x.strip()]
-        print(a)
-        return a
+        return [_pseudo_list_load(x) for x in value.splitlines() if x.strip()]
 
 
 dirname = os.path.abspath(os.path.dirname(__file__))
