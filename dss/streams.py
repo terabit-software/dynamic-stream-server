@@ -120,6 +120,7 @@ def create_provider(cls_name, conf):
             identifier = X
             input_opt = -ffmpeg -input -cmd
             output_opt = -ffmpeg -output -cmd
+            thumbnail_local = true  # optional
 
             [streams]
             mode = lazy, download, cache, file, list, named
@@ -176,7 +177,8 @@ def create_provider(cls_name, conf):
     attr.update(
         identifier = conf['identifier'],
         in_stream = conf['access'],
-        conf = conf
+        thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
+        conf = conf,
     )
     return type(cls_name, (cls,), attr)
 

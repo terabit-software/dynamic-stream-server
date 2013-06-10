@@ -295,7 +295,8 @@ class Thumbnail(object):
             id = self.id
 
             # Use local connection if stream is already running.
-            if Video.get_stream(self.id).alive:
+            # The provider can choose not use the local connection.
+            if provider.thumbnail_local and Video.get_stream(self.id).alive:
                 source = provider.out_stream
                 seek = 1
             else:
