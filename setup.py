@@ -6,17 +6,25 @@ except ImportError:
     use_setuptools()
     from setuptools import setup
 
+py_version = sys.version_info[:2]
 
-install_requires = []
-if sys.version_info < (3, 2):
-    install_requires = [
+# All versions
+install_requires = [
+    'setuptools',
+    'makeobj',
+]
+
+if py_version < (3, 2):
+    install_requires += [
         'futures',
         'configparser',
     ]
 
-install_requires += [
-    'setuptools',
-]
+if py_version in [(2, 6), (3, 0)]:
+    install_requires += [
+        'importlib',
+    ]
+
 
 setup(
     name='Dynamic Stream Server',

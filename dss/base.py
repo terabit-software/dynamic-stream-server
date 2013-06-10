@@ -8,12 +8,12 @@ except ImportError:
     from urllib2 import urlopen
 from concurrent import futures
 
-import noxml
-from config import config
-import ffmpeg
-import streams
-import thread_tools
-import process_tools
+from .config import config
+from . import noxml
+from . import ffmpeg
+from . import streams
+from . import thread_tools
+from . import process_tools
 
 
 def run_proc(id, cmd, mode):

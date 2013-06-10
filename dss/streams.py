@@ -1,8 +1,10 @@
-import ffmpeg
-from config import config
+import glob
+import os
 import re
-import cameras as _cetrio_cameras
 
+from .config import Parser, config, dirname
+from . import loader
+from . import ffmpeg
 
 def select_provider(id):
     """ Select provider based on identifier.
@@ -108,31 +110,83 @@ class NamedStreamProvider(BaseStreamProvider):
         return cls.identifier + str(cls.stream_list.index(stream))
 
 
-class Cetrio(BaseStreamProvider):
-    identifier = 'C'
-    conf = config['cetrio']
-    in_stream = '{0}{1}/{2} {3}'.format(
-        conf['addr'], conf['app'], conf['stream'], conf['data'],
+def create_provider(cls_name, conf):
+    """ Create provider based on configuration file.
+        This file (parsed with `.config.Parser`), must have
+        at least the sections "base" and "streams".
+
+            [base]
+            access = url://someurl/to/be/used/{0}.stream
+            identifier = X
+            input_opt = -ffmpeg -input -cmd
+            output_opt = -ffmpeg -output -cmd
+
+            [streams]
+            mode = lazy, download, cache, file, list, named
+            url = http://url-for-download-mode.com
+            parser = module.function  # This function must generate
+                                      # json-serializable data if cache
+                                      # is enabled
+            file = local_file_to_load.json
+            list =
+                ID1 GEO1 DESCRIPITION1   # if "named", the ID is the name
+                ID2 GEO2 DESCRIPITION2   # used to fetch the stream with
+                                         # the access url
+
+        The mode list is how the streams will be provided.
+    """
+    strm = conf['streams']
+    mode = set(strm.get_split('mode'))
+
+    cls = BaseStreamProvider
+    if 'named' in mode:
+        cls = NamedStreamProvider
+
+    attr = {}
+    if 'list' in mode:
+        def fetch_function():
+            return [x[0] for x in strm.get_multiline_list('list')]
+    else:
+        fetch = []
+        url = None
+        parser = None
+        name = None
+        if 'download' in mode:
+            fetch.append(loader.Place.url)
+            url = strm['url']
+            parser = loader.load_object(strm['parser'], 'dss.providers')
+        if 'cache' in mode:
+            fetch.append(loader.Place.cache)
+            name = strm.get('file', cls_name + '-streams.json')
+        if 'file' in mode:
+            fetch.append(loader.Place.file)
+            join = os.path.join
+            name = join(join(dirname, 'providers'), strm['file'])
+
+        def fetch_function():
+            return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
+
+    if 'lazy' in mode:
+        attr['lazy_initialization'] = classmethod(lambda cls: fetch_function())
+        attr['stream_list'] = None
+    else:
+        attr['stream_list'] = fetch_function()
+
+    conf = conf['base']
+    attr.update(
+        identifier = conf['identifier'],
+        in_stream = conf['access'],
+        conf = conf
     )
-
-    @classmethod
-    def lazy_initialization(cls):
-        return [c['id'] for c in _cetrio_cameras.get_cameras()]
+    return type(cls_name, (cls,), attr)
 
 
-class Fundao(NamedStreamProvider):
-    identifier = 'F'
-    conf = config['fundao']
-    in_stream = conf['addr']
-    stream_list = conf['cameras'].split()
-
-
-# Select stream provider classes from global namespace.
-# noinspection PyUnresolvedReferences
-providers = dict(
-    (cls.identifier, cls)
-    for cls in globals().values()
-    if isinstance(cls, type) and \
-       issubclass(cls, BaseStreamProvider) and \
-       cls.conf is not None # remove base classes
-)
+# Load providers from "conf" files on providers/ dir
+providers = {}
+for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
+    parser = Parser()
+    parser.read(conf)
+    name = os.path.splitext(os.path.basename(conf))[0]
+    prov = create_provider(name, parser)
+    # noinspection PyUnresolvedReferences
+    providers[prov.identifier] = prov
