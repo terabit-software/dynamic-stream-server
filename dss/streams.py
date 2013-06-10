@@ -130,7 +130,7 @@ def create_provider(cls_name, conf):
         if 'download' in mode:
             fetch.append(loader.Place.url)
             url = strm['url']
-            parser = strm['parser'] #FIXME load the funtion!
+            parser = loader.load_object(strm['parser'], 'dss.providers')
         if 'cache' in mode:
             fetch.append(loader.Place.cache)
             name = strm.get('file', cls_name + '-streams.json')

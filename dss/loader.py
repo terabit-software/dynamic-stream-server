@@ -1,4 +1,5 @@
 # coding: utf-8
+import importlib
 import json
 from os import path
 import makeobj
@@ -29,6 +30,28 @@ def _get_from_url(url, parser, save=None):
         with open(save, 'w') as f:
             json.dump(data, f)
     return data
+
+
+def load_object(name, package=None):
+    """ Load an object from a module and, if the module
+        cannot be found in a package (if given), it will
+        be loaded from global namespace.
+        No relative imports allowed.
+    """
+    module, function = name.rsplit('.', 1)
+    load_from_global = True
+    if package:
+        try:
+            module = importlib.import_module(package + '.' + module)
+        except ImportError:
+            pass
+        else:
+            load_from_global = False
+
+    if load_from_global:
+        module =  importlib.import_module(module)
+
+    return getattr(module, function)
 
 
 class Place(makeobj.Obj):
