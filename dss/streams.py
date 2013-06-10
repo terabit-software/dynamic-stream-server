@@ -111,6 +111,30 @@ class NamedStreamProvider(BaseStreamProvider):
 
 
 def create_provider(cls_name, conf):
+    """ Create provider based on configuration file.
+        This file (parsed with `.config.Parser`), must have
+        at least the sections "base" and "streams".
+
+            [base]
+            access = url://someurl/to/be/used/{0}.stream
+            identifier = X
+            input_opt = -ffmpeg -input -cmd
+            output_opt = -ffmpeg -output -cmd
+
+            [streams]
+            mode = lazy, download, cache, file, list, named
+            url = http://url-for-download-mode.com
+            parser = module.function  # This function must generate
+                                      # json-serializable data if cache
+                                      # is enabled
+            file = local_file_to_load.json
+            list =
+                ID1 GEO1 DESCRIPITION1   # if "named", the ID is the name
+                ID2 GEO2 DESCRIPITION2   # used to fetch the stream with
+                                         # the access url
+
+        The mode list is how the streams will be provided.
+    """
     strm = conf['streams']
     mode = set(strm.get_split('mode'))
 
