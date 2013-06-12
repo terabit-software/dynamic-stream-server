@@ -1,5 +1,6 @@
 from dss.streams import Providers
-from dss.base import Video, Thumbnail
+from dss.video import Video
+from dss.thumbnail import Thumbnail
 from dss.web import Server
 
 

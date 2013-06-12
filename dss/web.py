@@ -11,7 +11,7 @@ except ImportError:
     import urlparse
     from urllib2 import urlopen
 
-from . import base
+from . import video
 from .config import config
 
 
@@ -29,7 +29,7 @@ class Handler(server.BaseHTTPRequestHandler):
 
         if action == 'start':
             try:
-                base.Video.start(id)
+                video.Video.start(id)
             except KeyError:
                 return 404
         elif action == 'http':
@@ -40,11 +40,11 @@ class Handler(server.BaseHTTPRequestHandler):
             timeout = min(timeout, self.max_timeout)
 
             try:
-                base.Video.start(id, http_wait=timeout)
+                video.Video.start(id, http_wait=timeout)
             except KeyError:
                 return 404
         else:
-            base.Video.stop(id)
+            video.Video.stop(id)
         return 200
 
     def do_GET(self):
