@@ -1,6 +1,6 @@
 
 import shlex
-from .config import config
+from ..config import config
 
 bin_default = config.get('ffmpeg', 'bin')
 probe = config.get('ffmpeg', 'probe')

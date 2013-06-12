@@ -7,9 +7,7 @@ except ImportError:
 
 from .config import config
 from .streams import Providers
-from . import noxml
-from . import thread_tools
-from . import process_tools
+from .tools import process, thread, noxml
 
 
 class HTTPClient(object):
@@ -18,7 +16,7 @@ class HTTPClient(object):
         timeout period, the `Stream` instance will be decremented.
     """
     def __init__(self, parent):
-        self.lock = thread_tools.Condition()
+        self.lock = thread.Condition()
         self.timeout = None
         self.parent = parent
         self._stop()
@@ -30,7 +28,7 @@ class HTTPClient(object):
                 self._stop(restart=True)
                 self.lock.notify_all()
         else:
-            self.thread = thread_tools.Thread(self._wait_worker).start()
+            self.thread = thread.Thread(self._wait_worker).start()
         return self
 
     def _wait_worker(self):
@@ -60,10 +58,10 @@ class Stream(object):
     reload_timeout = _ffmpeg.getint('reload')
 
     def __init__(self, id, timeout=run_timeout):
-        self.lock = thread_tools.Lock()
+        self.lock = thread.Lock()
         self.id = id
         provider = Providers.select(id)
-        self.fn = lambda self=self: process_tools.run_proc(
+        self.fn = lambda self=self: process.run_proc(
             self.id,
             provider.make_cmd(self.id),
             'fetch'
@@ -150,7 +148,7 @@ class Stream(object):
                     print(self._proc_msg(pid, 'stopped'))
                     break
 
-        self.thread = thread_tools.Thread(worker).start()
+        self.thread = thread.Thread(worker).start()
 
     def _kill(self):
         """ Kill the FFmpeg process. Don't call this function directly,
@@ -181,12 +179,12 @@ class Stream(object):
             else:
                 self.proc_run = True
 
-        thread_tools.Thread(stop_worker).start()
+        thread.Thread(stop_worker).start()
 
 
 class Video(object):
     _data = {}
-    _data_lock = thread_tools.Lock()
+    _data_lock = thread.Lock()
     run = True
 
     @classmethod

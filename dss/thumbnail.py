@@ -4,17 +4,15 @@ import os
 from concurrent import futures
 
 from .config import config
+from .tools import thread, process, ffmpeg
 from .streams import Providers
 from .video import Video
-from . import ffmpeg
-from . import thread_tools
-from . import process_tools
 
 
 class Thumbnail(object):
     run = True
     clean = True
-    lock = thread_tools.Condition()
+    lock = thread.Condition()
 
     stream_list = None
     _thumb = config['thumbnail']
@@ -48,7 +46,7 @@ class Thumbnail(object):
                 id = provider.get_stream(self.id)
                 origin = provider
 
-            return process_tools.run_proc(
+            return process.run_proc(
                 self.id,
                 Thumbnail.make_cmd(id, source, seek, origin),
                 'thumb',
@@ -73,7 +71,7 @@ class Thumbnail(object):
                       the timeout).
             """
             with self.lock:
-                thread_tools.Condition.wait_for_any(
+                thread.Condition.wait_for_any(
                     [Thumbnail.lock, self.lock], self.timeout
                 )
                 self._close_proc()
@@ -85,13 +83,13 @@ class Thumbnail(object):
                 by waiter). Awakes the waiter if process finished first.
                 Returns the process output code.
             """
-            self.lock = thread_tools.Condition.from_condition(Thumbnail.lock)
+            self.lock = thread.Condition.from_condition(Thumbnail.lock)
             with self.lock:
                 if not Thumbnail.run:
                     return
 
             with self._open_proc() as self.proc:
-                thread_tools.Thread(self._waiter).start()
+                thread.Thread(self._waiter).start()
 
                 self.proc.communicate()
                 with self.lock:
@@ -184,7 +182,7 @@ class Thumbnail(object):
 
     @classmethod
     def start_download(cls):
-        thread_tools.Thread(cls.main_worker).start()
+        thread.Thread(cls.main_worker).start()
 
     @classmethod
     def stop_download(cls):
