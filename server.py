@@ -6,6 +6,7 @@ from dss.web import Server
 def main():
     Providers.load()
     Video.initialize_from_stats()
+    Video.auto_start()
     Thumbnail.start_download()
 
     server = Server()

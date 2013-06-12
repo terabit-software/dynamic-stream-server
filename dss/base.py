@@ -260,6 +260,11 @@ class Video(object):
             cls.start(stream['name'], nclients)
 
     @classmethod
+    def auto_start(cls):
+        for id in config['general'].get_list('auto_start'):
+            cls.start(id)
+
+    @classmethod
     def terminate_streams(cls):
         with cls._data_lock:
             cls.run = False
