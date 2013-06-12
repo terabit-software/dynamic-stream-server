@@ -19,15 +19,15 @@ class HTTPClient(object):
     """
     def __init__(self, parent):
         self.lock = thread_tools.Condition()
-        self.stopped = True
         self.timeout = None
         self.parent = parent
+        self._stop()
 
     def wait(self, timeout):
         self.timeout = timeout
-        if not self.stopped:
+        if not self._stopped:
             with self.lock:
-                self.stopped = True
+                self._stop(restart=True)
                 self.lock.notify_all()
         else:
             self.thread = thread_tools.Thread(self._wait_worker).start()
@@ -35,14 +35,23 @@ class HTTPClient(object):
 
     def _wait_worker(self):
         with self.lock:
-            while self.stopped:
-                self.stopped = False
+            while self._stopped:
+                self._start()
                 self.lock.wait(self.timeout)
-            self.stopped = True
+            self._stopped = True
+            self._stopped_info = True
             self.parent.dec(http=True)
 
+    def _stop(self, restart=False, data=True):
+        self._stopped = data
+        if not restart:
+            self._stopped_info = data
+
+    def _start(self):
+        self._stop(data=False)
+
     def __bool__(self):
-        return not self.stopped
+        return not self._stopped_info
     __nonzero__ = __bool__
 
 
