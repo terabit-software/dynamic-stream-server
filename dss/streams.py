@@ -152,7 +152,8 @@ class Providers(object):
     def load(cls):
         """ Load providers from "conf" files on providers/ dir
         """
-        for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
+        ext = config['providers']['conf_file_ext']
+        for conf in glob.glob(os.path.join(dirname, 'providers/*.' + ext)):
             parser = Parser()
             parser.read(conf)
             name = os.path.splitext(os.path.basename(conf))[0]
