@@ -9,9 +9,9 @@ except ImportError:
 from concurrent import futures
 
 from .config import config
+from .streams import Providers
 from . import noxml
 from . import ffmpeg
-from . import streams
 from . import thread_tools
 from . import process_tools
 
@@ -73,7 +73,7 @@ class Stream(object):
     def __init__(self, id, timeout=run_timeout):
         self.lock = thread_tools.Lock()
         self.id = id
-        provider = streams.select_provider(id)
+        provider = Providers.select(id)
         self.fn = lambda self=self: run_proc(
             self.id,
             provider.make_cmd(self.id),
@@ -288,7 +288,7 @@ class Thumbnail(object):
         def _open_proc(self):
             """ Select stream and open process
             """
-            provider = streams.select_provider(self.id)
+            provider = Providers.select(self.id)
             source = provider.in_stream
             seek = None
             origin = None
@@ -357,7 +357,7 @@ class Thumbnail(object):
 
     @classmethod
     def main_worker(cls):
-        stream_list = [p.streams() for p in streams.providers.values()]
+        stream_list = [p.streams() for p in Providers.values()]
         cls.stream_list = [item for sublist in stream_list for item in sublist]
 
         try:

@@ -1,8 +1,10 @@
+from dss.streams import Providers
 from dss.base import Video, Thumbnail
 from dss.web import Server
 
 
 def main():
+    Providers.load()
     Video.initialize_from_stats()
     Thumbnail.start_download()
 

@@ -7,33 +7,6 @@ from . import loader
 from . import ffmpeg
 
 
-def select_provider(id):
-    """ Select provider based on identifier.
-    """
-    id = re.search(r'^[A-Za-z]*', id).group(0)
-    if not id:
-        id = None
-    return providers[id]
-
-
-def enable_provider(identifier):
-    """ Enable a provider based on text identifier.
-        The provider must have been loaded into _all_providers first!
-    """
-    prov = _all_providers[identifier]
-    prov.is_enabled = True
-    providers[identifier] = prov
-    return prov
-
-
-def disable_provider(identifier):
-    """ Disable a provider based on text identifier.
-    """
-    prov = providers.pop(identifier)
-    prov.is_enabled = False
-    return prov
-
-
 class BaseStreamProvider(object):
     """ Basic stream provider system with a text identifier and a number
         identifier.
@@ -129,94 +102,149 @@ class NamedStreamProvider(BaseStreamProvider):
         return cls.identifier + str(cls.stream_list.index(stream))
 
 
-def create_provider(cls_name, conf):
-    """ Create provider based on configuration file.
-        This file (parsed with `.config.Parser`), must have
-        at least the sections "base" and "streams".
-
-            [base]
-            access = url://someurl/to/be/used/{0}.stream
-            identifier = X
-            input_opt = -ffmpeg -input -cmd
-            output_opt = -ffmpeg -output -cmd
-            thumbnail_local = true  # optional
-
-            [streams]
-            mode = lazy, download, cache, file, list, named
-            url = http://url-for-download-mode.com
-            parser = module.function  # This function must generate
-                                      # json-serializable data if cache
-                                      # is enabled
-            file = local_file_to_load.json
-            list =
-                ID1 GEO1 DESCRIPITION1   # if "named", the ID is the name
-                ID2 GEO2 DESCRIPITION2   # used to fetch the stream with
-                                         # the access url
-
-        The mode list is how the streams will be provided.
+# ---------------------------------------------------------------------
+class Providers(object):
+    """ Container for all providers and enabled providers.
     """
-    strm = conf['streams']
-    mode = set(strm.get_split('mode'))
+    _all = {}
+    _enabled = {}
 
-    cls = BaseStreamProvider
-    if 'named' in mode:
-        cls = NamedStreamProvider
+    @classmethod
+    def values(cls):
+        return cls._enabled.values()
 
-    attr = {}
-    if 'list' in mode:
-        def fetch_function():
-            return [x[0] for x in strm.get_multiline_list('list')]
-    else:
-        fetch = []
-        url = None
-        parser = None
-        name = None
-        if 'download' in mode:
-            fetch.append(loader.Place.url)
-            url = strm['url']
-            parser = loader.load_object(strm['parser'], 'dss.providers')
-        if 'cache' in mode:
-            fetch.append(loader.Place.cache)
-            name = strm.get('file', cls_name + '-streams.json')
-        if 'file' in mode:
-            fetch.append(loader.Place.file)
-            join = os.path.join
-            name = join(join(dirname, 'providers'), strm['file'])
+    @classmethod
+    def enabled(cls):
+        return cls._enabled
 
-        def fetch_function():
-            return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
+    @classmethod
+    def all(cls):
+        return cls._all
 
-    if 'lazy' in mode:
-        attr['lazy_initialization'] = classmethod(lambda cls: fetch_function())
-        attr['stream_list'] = None
-    else:
-        attr['stream_list'] = fetch_function()
+    @classmethod
+    def select(cls, id):
+        """ Select enabled provider based on identifier.
+        """
+        id = re.search(r'^[A-Za-z]*', id).group(0)
+        if not id:
+            id = None
+        return cls._enabled[id]
 
-    conf = conf['base']
-    attr.update(
-        identifier = conf['identifier'],
-        in_stream = conf['access'],
-        thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
-        conf = conf,
-        is_enabled = conf.getboolean(
-            'enabled',
-            fallback=config['providers'].getboolean('enabled')
-        ),
-    )
-    return type(cls_name, (cls,), attr)
+    @classmethod
+    def enable(cls, identifier):
+        """ Enable a provider based on text identifier.
+            The provider must have been loaded into _all_providers first!
+        """
+        prov = cls._all[identifier]
+        prov.is_enabled = True
+        cls._enabled[identifier] = prov
+        return prov
 
+    @classmethod
+    def disable(cls, identifier):
+        """ Disable a provider based on text identifier.
+        """
+        prov = cls._enabled.pop(identifier)
+        prov.is_enabled = False
+        return prov
 
-# Load providers from "conf" files on providers/ dir
-_all_providers = {}
-for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
-    parser = Parser()
-    parser.read(conf)
-    name = os.path.splitext(os.path.basename(conf))[0]
-    prov = create_provider(name, parser)
-    # noinspection PyUnresolvedReferences
-    _all_providers[prov.identifier] = prov
+    @classmethod
+    def load(cls):
+        """ Load providers from "conf" files on providers/ dir
+        """
+        for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
+            parser = Parser()
+            parser.read(conf)
+            name = os.path.splitext(os.path.basename(conf))[0]
+            cls.create(name, parser)
 
-providers = dict((
-    (k, v) for k, v in _all_providers.items()
-    if v.is_enabled
-))
+    #noinspection PyUnresolvedReferences
+    @classmethod
+    def _insert(cls, provider, auto_enable=True):
+        """ Insert provider in the _all dictionary.
+            If it is enabled and auto_enable is true,
+            also inserts in the _enabled dictionary.
+        """
+        cls._all[provider.identifier] = provider
+        if auto_enable and provider.is_enabled:
+            cls._enabled[provider.identifier] = provider
+
+    @classmethod
+    def create(cls, cls_name, conf, auto_enable=True):
+        """ Create provider based on configuration file.
+            This file (parsed with `.config.Parser`), must have
+            at least the sections "base" and "streams".
+
+                [base]
+                access = url://someurl/to/be/used/{0}.stream
+                identifier = X
+                input_opt = -ffmpeg -input -cmd
+                output_opt = -ffmpeg -output -cmd
+                thumbnail_local = true  # optional
+
+                [streams]
+                mode = lazy, download, cache, file, list, named
+                url = http://url-for-download-mode.com
+                parser = module.function  # This function must generate
+                                          # json-serializable data if cache
+                                          # is enabled
+                file = local_file_to_load.json
+                list =
+                    ID1 GEO1 DESCRIPITION1   # if "named", the ID is the name
+                    ID2 GEO2 DESCRIPITION2   # used to fetch the stream with
+                                             # the access url
+
+            The mode list is how the streams will be provided.
+        """
+        strm = conf['streams']
+        mode = set(strm.get_split('mode'))
+
+        cls_ = BaseStreamProvider
+        if 'named' in mode:
+            cls_ = NamedStreamProvider
+
+        attr = {}
+        if 'list' in mode:
+            def fetch_function():
+                return [x[0] for x in strm.get_multiline_list('list')]
+        else:
+            fetch = []
+            url = None
+            parser = None
+            name = None
+            if 'download' in mode:
+                fetch.append(loader.Place.url)
+                url = strm['url']
+                parser = loader.load_object(strm['parser'], 'dss.providers')
+            if 'cache' in mode:
+                fetch.append(loader.Place.cache)
+                name = strm.get('file', cls_name + '-streams.json')
+            if 'file' in mode:
+                fetch.append(loader.Place.file)
+                join = os.path.join
+                name = join(join(dirname, 'providers'), strm['file'])
+
+            def fetch_function():
+                return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
+
+        if 'lazy' in mode:
+            attr['lazy_initialization'] = classmethod(lambda cls: fetch_function())
+            attr['stream_list'] = None
+        else:
+            attr['stream_list'] = fetch_function()
+
+        conf = conf['base']
+        attr.update(
+            identifier = conf['identifier'],
+            in_stream = conf['access'],
+            thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
+            conf = conf,
+            is_enabled = conf.getboolean(
+                'enabled',
+                fallback=config['providers'].getboolean('enabled')
+            ),
+        )
+
+        provider = type(cls_name, (cls_,), attr)
+        cls._insert(provider, auto_enable)
+        return provider
