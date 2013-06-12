@@ -3,8 +3,8 @@ import os
 import re
 
 from .config import Parser, config, dirname
+from .tools import ffmpeg
 from . import loader
-from . import ffmpeg
 
 
 class BaseStreamProvider(object):

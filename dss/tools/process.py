@@ -3,7 +3,7 @@ import sys
 import os
 from subprocess import *
 
-from .config import config
+from ..config import config
 
 LOG_DIR = config['log']['dir']
 
