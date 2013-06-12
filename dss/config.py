@@ -4,7 +4,6 @@
 import os
 import re
 import string
-import sys
 import ast
 import configparser
 
@@ -81,6 +80,14 @@ class Parser(configparser.ConfigParser):
         value = self.get(section, option)
         return [_pseudo_list_load(x) for x in value.splitlines() if x.strip()]
 
+    def read(self, filenames, encoding=None):
+        if encoding is None:
+            try:
+                encoding = PROVIDER_CONFIG_ENCODING
+            except NameError:
+                pass
+        return super(Parser, self).read(filenames, encoding)
+
 
 dirname = os.path.abspath(os.path.dirname(__file__))
 
@@ -99,6 +106,8 @@ else:
             config[sec][k] = v
 
 
+# After configuration loaded.
+
 def create_dir(name):
     if not os.path.exists(name):
         os.makedirs(name)
@@ -107,3 +116,4 @@ create_dir(config['cache']['dir'])
 create_dir(config['thumbnail']['dir'])
 create_dir(config['log']['dir'])
 
+PROVIDER_CONFIG_ENCODING = config['providers']['conf_file_enc']
