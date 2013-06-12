@@ -211,7 +211,7 @@ class Video(object):
         addr = http['addr']
         stat = http['stat_url']
         data = urlopen(addr + stat).read()
-        return noxml.load(data)
+        return noxml.load(data, ('stream', 'application'))
 
     @classmethod
     def initialize_from_stats(cls):
@@ -220,19 +220,16 @@ class Video(object):
         except IOError:
             return
 
-        if isinstance(stats, dict): stats = [stats]
         app = config['rtmp-server']['app']
         try:
             app = next(x['live'] for x in stats if x['name'] == app)
         except StopIteration:
-            raise NameError('No app named %r' % app)
+            raise RuntimeError('No app named %r' % app)
 
         # App clients
         stream_list = app.get('stream')
         if stream_list is None:
             return
-        if isinstance(stream_list, dict):
-            stream_list = [stream_list]
 
         for stream in stream_list:
             # Stream clients
