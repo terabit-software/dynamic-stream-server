@@ -38,8 +38,7 @@ class HTTPClient(object):
             while self._stopped:
                 self._start()
                 self.lock.wait(self.timeout)
-            self._stopped = True
-            self._stopped_info = True
+            self._stop()
             self.parent.dec(http=True)
 
     def _stop(self, restart=False, data=True):
