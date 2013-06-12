@@ -6,6 +6,7 @@ from .config import Parser, config, dirname
 from . import loader
 from . import ffmpeg
 
+
 def select_provider(id):
     """ Select provider based on identifier.
     """
@@ -13,6 +14,24 @@ def select_provider(id):
     if not id:
         id = None
     return providers[id]
+
+
+def enable_provider(identifier):
+    """ Enable a provider based on text identifier.
+        The provider must have been loaded into _all_providers first!
+    """
+    prov = _all_providers[identifier]
+    prov.is_enabled = True
+    providers[identifier] = prov
+    return prov
+
+
+def disable_provider(identifier):
+    """ Disable a provider based on text identifier.
+    """
+    prov = providers.pop(identifier)
+    prov.is_enabled = False
+    return prov
 
 
 class BaseStreamProvider(object):
@@ -179,16 +198,25 @@ def create_provider(cls_name, conf):
         in_stream = conf['access'],
         thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
         conf = conf,
+        is_enabled = conf.getboolean(
+            'enabled',
+            fallback=config['providers'].getboolean('enabled')
+        ),
     )
     return type(cls_name, (cls,), attr)
 
 
 # Load providers from "conf" files on providers/ dir
-providers = {}
+_all_providers = {}
 for conf in glob.glob(os.path.join(dirname, 'providers/*.conf')):
     parser = Parser()
     parser.read(conf)
     name = os.path.splitext(os.path.basename(conf))[0]
     prov = create_provider(name, parser)
     # noinspection PyUnresolvedReferences
-    providers[prov.identifier] = prov
+    _all_providers[prov.identifier] = prov
+
+providers = dict((
+    (k, v) for k, v in _all_providers.items()
+    if v.is_enabled
+))
