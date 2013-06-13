@@ -12,7 +12,7 @@ from .providers import Providers
 from .tools import process, thread, noxml
 
 
-class HTTPClient(object):
+class StreamHTTPClient(object):
     """ Emulate the behaviour of a RTMP client when there's an HTTP access
         for a certain Stream. If no other HTTP access is made within the
         timeout period, the `Stream` instance will be decremented.
@@ -73,7 +73,7 @@ class Stream(object):
         self.proc = None
         self.thread = None
         self.timeout = timeout
-        self.http_client = HTTPClient(self)
+        self.http_client = StreamHTTPClient(self)
 
     def __repr__(self):
         pid = self.proc.pid if self.proc else None
