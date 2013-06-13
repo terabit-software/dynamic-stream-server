@@ -6,7 +6,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from .config import config
-from .streams import Providers
+from .providers import Providers
 from .tools import process, thread, noxml
 
 

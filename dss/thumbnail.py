@@ -5,7 +5,7 @@ from concurrent import futures
 
 from .config import config
 from .tools import thread, process, ffmpeg
-from .streams import Providers
+from .providers import Providers
 from .video import Video
 
 

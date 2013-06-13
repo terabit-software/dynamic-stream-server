@@ -150,10 +150,10 @@ class Providers(object):
 
     @classmethod
     def load(cls):
-        """ Load providers from "conf" files on providers/ dir
+        """ Load providers from configuration files on providers_data/ dir
         """
         ext = config['providers']['conf_file_ext']
-        for conf in glob.glob(os.path.join(dirname, 'providers/*.' + ext)):
+        for conf in glob.glob(os.path.join(dirname, 'providers_data/*.' + ext)):
             parser = Parser()
             parser.read(conf)
             name = os.path.splitext(os.path.basename(conf))[0]
@@ -216,14 +216,14 @@ class Providers(object):
             if 'download' in mode:
                 fetch.append(loader.Place.url)
                 url = strm['url']
-                parser = loader.load_object(strm['parser'], 'dss.providers')
+                parser = loader.load_object(strm['parser'], 'dss.providers_data')
             if 'cache' in mode:
                 fetch.append(loader.Place.cache)
                 name = strm.get('file', cls_name + '-streams.json')
             if 'file' in mode:
                 fetch.append(loader.Place.file)
                 join = os.path.join
-                name = join(join(dirname, 'providers'), strm['file'])
+                name = join(join(dirname, 'providers_data'), strm['file'])
 
             def fetch_function():
                 return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
