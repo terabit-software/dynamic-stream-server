@@ -19,42 +19,79 @@ def _section_getattr_replacement(self, attr):
 configparser.SectionProxy.__getattr__ = _section_getattr_replacement
 
 
-def _ast_load(s):
-    try:
-        return ast.literal_eval(s)
-    except Exception:
-        return s
+def _insert(x, obj):
+    if isinstance(obj, set):
+        obj.add(x)
+    else:
+        obj.append(x)
+
+
+def _add_element(el, obj, allow_empty=False):
+    if el or allow_empty:
+        try:
+            el = ast.literal_eval(el)
+        except Exception:
+            pass
+        _insert(el, obj)
+    return ''
 
 
 def _pseudo_list_load(value):
     tokens = []
+    block = tokens
+    block_order = [tokens]
+
     this = ''
     continuation = ''
+    block_continuation = []
+    block_token = {
+        '[': (list, ']'),
+        '(': (list, ')'),
+        '{': (set,  '}'),
+    }
+    close_error = [x[1] for x in block_token.values()]
+
     for char in value:
         if char == continuation:
-            tokens.append(this)
-            this = ''
+            this = _add_element(this, block, allow_empty=True)
             continuation = ''
             continue
-        if continuation:
+        elif continuation:
             this += char
             continue
-        if char in string.whitespace + ',':
-            if this:
-                tokens.append(this)
-                this = ''
+        elif char in string.whitespace + ',':
+            this = _add_element(this, block)
             continue
-        if char in '"\'':
+        elif char in '"\'':
             continuation = char
             continue
+        elif char in block_token:
+            type_, close = block_token[char]
+            block = type_()
+            block_continuation.append(close)
+            _insert(block, block_order[-1])
+            block_order.append(block)
+            continue
+        elif block_continuation and char in block_continuation[-1]:
+            this = _add_element(this, block)
+            block_order.pop()
+            block_continuation.pop()
+            block = block_order[-1]
+            continue
+        elif char in close_error:
+            raise ValueError('Cannot close block: %s' % char)
         this += char
-    if continuation:
-        raise ValueError('EOL while reading string. '
-                         'Missing: %s' % continuation)
-    if this:
-        tokens.append(this)
 
-    return [_ast_load(x) for x in tokens]
+    if continuation:
+        raise ValueError('End of text while reading string. '
+                         'Missing: %s' % continuation)
+    if block_continuation:
+        raise ValueError('End of text while reading block. Missing: %s' %
+                         ' '.join(reversed(block_continuation)))
+    if this:
+        _add_element(this, block)
+
+    return tokens
 
 
 class Parser(configparser.ConfigParser):
