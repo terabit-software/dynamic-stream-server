@@ -116,6 +116,10 @@ def _pseudo_list_load(value):
                 raise ValueError('Cannot create dictionary without { }')
             continue
         elif char in block_token:
+            this, next_as_pair = _Pair.insert_element(
+                this, block,
+                create_pair=next_as_pair
+            )
             block = []
             block_order.append(block)
             block_continuation.append(block_token[char])
