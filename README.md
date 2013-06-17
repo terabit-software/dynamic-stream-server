@@ -25,7 +25,6 @@ Installation Guide:
     - libx264
     - libfdk_aac
 
-
 2. [Nginx][2] with [Nginx-rtmp-module][3].
 
     Download both projects and follow the instructions on README page of the latter.
@@ -47,13 +46,13 @@ Installation Guide:
     This file will install several python modules.
 
     > If you do not want the modules installed globally, or you do not have *root* permissions,
-    > create a virtualenv first.
+    > create a [virtualenv][5] first.
 
     Run this command (as root if installing globally):
 
         $ python setup.py develop
 
-    Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
+    Replace `python` if you want another interpreter, e.g.: `python3`, `python3.3`, `pypy`
 
 
 
@@ -81,7 +80,7 @@ directory to save files, add this to the file:
 
         $ python server.py
 
-    Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
+    Replace `python` if you want another interpreter, e.g.: `python3`, `python3.3`, `pypy`
 
 
 Other:
@@ -100,4 +99,4 @@ Other:
 [2]: http://nginx.org/
 [3]: http://github.com/arut/nginx-rtmp-module
 [4]: http://rarut.wordpress.com/2013/06/13/windows-support-in-1-0-1/
-
+[5]: http://www.virtualenv.org/en/latest/
