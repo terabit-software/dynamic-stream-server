@@ -10,7 +10,7 @@ Dynamic Stream Server
 Installation Guide:
 ----
 
-1. [FFmpeg][1]
+1. ## [FFmpeg][1]
 
     Compile or install FFmpeg latest version or from git master. Latest versions have
     much better RTMP support. Versions older than 1.0 may not work well (or not work at all).
@@ -25,7 +25,7 @@ Installation Guide:
     - libx264
     - libfdk_aac
 
-2. [Nginx][2] with [Nginx-rtmp-module][3].
+2. ## [Nginx][2] with [Nginx-rtmp-module][3].
 
     Download both projects and follow the instructions on README page of the latter.
 
@@ -33,7 +33,7 @@ Installation Guide:
     - Nginx-rtmp-module 0.9 or newer (older versions had a bug that did not tell when
       users stopped viewing the RTMP stream).
 
-3. Python 2.6+
+3. ## Python 2.6+
 
     This program will not work on Python versions older than 2.6. Do not try to use.
 
@@ -42,7 +42,8 @@ Installation Guide:
 
     Both CPython and PyPy are supported. Other Python interpreters are untested, but *may* work.
 
-4. `setup.py`
+4. ## `setup.py`
+
     This file will install several python modules.
 
     > If you do not want the modules installed globally, or you do not have *root* permissions,
