@@ -42,7 +42,7 @@ Installation Guide:
 
     Both CPython and PyPy are supported. Other Python interpreters are untested, but *may* work.
 
-4. ## `setup.py`
+4. ## Running `setup.py`
 
     This file will install several python modules.
 
@@ -89,10 +89,11 @@ Other:
 
 - Windows Support:
 
-  The project works on Windows and the Nginx-rtmp-module is known to compile as of [version 1.0.1][4].
-  You may have to replace `exec_play` and `exec_play_done` to `on_play` and `on_play_done` respectively
-  on `nginx.conf` and remove the call to `curl`.
-  You should change all the paths on `local.conf` and `nginx.conf` to be compliant with Windows.
+    The project works on Windows and the Nginx-rtmp-module is known to compile as of [version 1.0.1][4].
+
+    You may have to replace `exec_play` and `exec_play_done` to `on_play` and `on_play_done` respectively
+    on `nginx.conf` and remove the call to `curl`.
+    You should change all the paths on `local.conf` and `nginx.conf` to be compliant with Windows.
 
 
 
