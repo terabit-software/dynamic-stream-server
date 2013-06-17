@@ -49,7 +49,7 @@ def load_object(name, package=None):
             load_from_global = False
 
     if load_from_global:
-        module =  importlib.import_module(module)
+        module = importlib.import_module(module)
 
     return getattr(module, function)
 
