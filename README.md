@@ -1,6 +1,6 @@
 
 Dynamic Stream Server
-----
+====
 
 * Authors: João Bernardo Oliveira, Nelson Perez
 * Version:   0.1
@@ -12,48 +12,48 @@ Installation Guide:
 
 1. [FFmpeg][1]
 
-   Compile or install FFmpeg latest version or from git master. Latest versions have
-   much better RTMP support. Versions older than 1.0 may not work well (or not work at all).
-   Libav **is not supported**.
+    Compile or install FFmpeg latest version or from git master. Latest versions have
+    much better RTMP support. Versions older than 1.0 may not work well (or not work at all).
+    Libav **is not supported**.
 
-   Requirements:
+    Requirements:
 
-   - librtmp
+    - librtmp
 
-   Optional (for best results):
+    Optional (for best results):
 
-   - libx264
-   - libfdk_aac
+    - libx264
+    - libfdk_aac
 
 
 2. [Nginx][2] with [Nginx-rtmp-module][3].
 
-   Download both projects and follow the instructions on README page of the latter.
+    Download both projects and follow the instructions on README page of the latter.
 
-   - Nginx 1.0 or newer (or whichever the other recommends).
-   - Nginx-rtmp-module 0.9 or newer (older versions had a bug that did not tell when
-     users stopped viewing the RTMP stream).
+    - Nginx 1.0 or newer (or whichever the other recommends).
+    - Nginx-rtmp-module 0.9 or newer (older versions had a bug that did not tell when
+      users stopped viewing the RTMP stream).
 
 3. Python 2.6+
 
-   This program will not work on Python versions older than 2.6. Do not try to use.
+    This program will not work on Python versions older than 2.6. Do not try to use.
 
-   For best results, use Python 3.2 or newer. The multithreading support makes
-   the program run much faster.
+    For best results, use Python 3.2 or newer. The multithreading support makes
+    the program run much faster.
 
-   Both CPython and PyPy are supported. Other Python interpreters are untested, but *may* work.
+    Both CPython and PyPy are supported. Other Python interpreters are untested, but *may* work.
 
 4. `setup.py`
-   This file will install several python modules.
+    This file will install several python modules.
 
-   > If you do not want the modules installed globally, or you do not have *root* permissions,
-   > create a virtualenv first.
+    > If you do not want the modules installed globally, or you do not have *root* permissions,
+    > create a virtualenv first.
 
-   Run this command (as root if installing globally):
+    Run this command (as root if installing globally):
 
         $ python setup.py develop
 
-   Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
+    Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
 
 
 
@@ -81,7 +81,7 @@ directory to save files, add this to the file:
 
         $ python server.py
 
-   Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
+    Replace `python` if you want another interpreter, e.g: `python3`, `python3.3`, `pypy`
 
 
 Other:
