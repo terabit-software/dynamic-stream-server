@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import sys
 
 from .config import Parser, config, dirname
 from .tools import ffmpeg
@@ -245,6 +246,11 @@ class Providers(object):
                 fallback=config['providers'].getboolean('enabled')
             ),
         )
+
+        if sys.version_info < (3, 0):
+            # When configparser has an encoding set, all strings become
+            # unicode and Py2k do not accept them as class name.
+            cls_name = cls_name.encode('utf-8')
 
         provider = type(cls_name, (cls_,), attr)
         cls._insert(provider, auto_enable)
