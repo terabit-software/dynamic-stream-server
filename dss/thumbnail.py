@@ -132,6 +132,10 @@ class Thumbnail(object):
                     if error:
                         print('Could not fetch:\n' + ', '.join(error))
 
+                error = set(error)
+                for s in cls.stream_list: # Record stats
+                    Video.get_stream(s).stats.thumbnail.inc(s in error)
+
             if cls.run:
                 # Do not start delete routine if the program was requested
                 # to stop otherwise it may delete inconsistently data from
