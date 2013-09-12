@@ -19,6 +19,7 @@ class Thumbnail(object):
     interval = _thumb.getint('interval')
     workers = _thumb.getint('workers')
     timeout = _thumb.getint('timeout')
+    delete_after = _thumb.getint('delete_after')
 
     class Worker(object):
         def __init__(self, id, timeout):
@@ -118,22 +119,25 @@ class Thumbnail(object):
             with futures.ThreadPoolExecutor(cls.workers) as executor:
                 map = dict(
                     (executor.submit(cls.Worker(x, cls.timeout)), x)
-                        for x in cls.stream_list
+                    for x in cls.stream_list
                 )
                 done = {}
                 for future in futures.as_completed(map):
                     done[map[future]] = future.result()
                 error = [x for x in cls.stream_list if done[x] != 0]
 
-                if cls.run: # Show stats
+                if cls.run:  # Show stats
                     cams = len(cls.stream_list)
                     print('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
                     if error:
                         print('Could not fetch:\n' + ', '.join(error))
 
-            t = time.time() - t
-            interval = cls.interval - t
+            cls.delete_old_thumbnails(error)
+
             with cls.lock:
+                t = time.time() - t
+                interval = cls.interval - t
+
                 cls.clean = True
                 cls.lock.notify_all()
 
@@ -142,6 +146,22 @@ class Thumbnail(object):
                 elif cls.run:
                     print('Thumbnail round delayed by {0:.2f} seconds'.format(-interval))
 
+    @classmethod
+    def make_file_names(cls, id, resize_information=False):
+        sizes = re.findall(r'(\w+):(\w+)', cls._thumb['sizes'])
+        names = [''] + ['-' + s[0] for s in sizes]
+
+        outputs = [
+            os.path.join(
+                cls._thumb['dir'],
+                '{0}{1}.{2}'.format(id, _name, cls._thumb['format'])
+            )
+            for _name in names
+        ]
+
+        if resize_information:
+            return outputs, sizes
+        return outputs
 
     @classmethod
     def make_cmd(cls, name, source, seek=None, origin=None):
@@ -152,25 +172,16 @@ class Thumbnail(object):
         if seek is not None:
             out_opt += ' -ss ' + str(seek)
 
-        resize_opt = thumb['resize_opt']
-        sizes = re.findall(r'(\w+):(\w+)', thumb['sizes'])
-
-        resize = [''] + [resize_opt.format(s[1]) for s in sizes]
-        names = [''] + ['-' + s[0] for s in sizes]
-
         # If fetching thumbnail from origin server, will need the stream
         # id that is different from stream name.
         id = name
         if origin:
             id = origin.get_id(name)
 
-        outputs = [
-        os.path.join(
-            thumb['dir'],
-            '{0}{1}.{2}'.format(id, _name, thumb['format'])
-        )
-        for _name in names
-        ]
+        outputs, sizes = cls.make_file_names(id, resize_information=True)
+
+        resize_opt = cls._thumb['resize_opt']
+        resize = [''] + [resize_opt.format(s[1]) for s in sizes]
 
         return ffmpeg.cmd_outputs(
             thumb['input_opt'],
@@ -191,3 +202,33 @@ class Thumbnail(object):
             cls.lock.notify_all()
             while not cls.clean:
                 cls.lock.wait()
+
+    @classmethod
+    def delete_old_thumbnails(cls, thumbs):
+        """ From a list of thumbnails ids, check which files are older than
+            delete_after and remove them.
+            If delete_after is zero, skip the check.
+        """
+        if not cls.delete_after:
+            return
+
+        deleted = []
+
+        for id in thumbs:
+            names = cls.make_file_names(id)
+            try:
+                modified_time = os.path.getmtime(names[0])
+            except OSError:
+                continue
+            if time.time() - modified_time > cls.delete_after:
+                for name in names:
+                    try:
+                        os.remove(name)
+                    except OSError:
+                        pass
+                deleted.append(id)
+
+        if deleted:
+            print('Old thumbnails removed:\n', ', '.join(deleted))
+
+        return deleted
