@@ -55,7 +55,7 @@ class HTTPClient(object):
 
 
 class Stream(object):
-    _ffmpeg =  config['ffmpeg']
+    _ffmpeg = config['ffmpeg']
     run_timeout = _ffmpeg.getint('timeout')
     reload_timeout = _ffmpeg.getint('reload')
 
