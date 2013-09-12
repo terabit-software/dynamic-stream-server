@@ -132,7 +132,13 @@ class Thumbnail(object):
                     if error:
                         print('Could not fetch:\n' + ', '.join(error))
 
-            cls.delete_old_thumbnails(error)
+            if cls.run:
+                # Do not start delete routine if the program was requested
+                # to stop otherwise it may delete inconsistently data from
+                # other runs.
+                # It may seem as a desirable behavior to delete old data,
+                # but this should be done at the program start.
+                cls.delete_old_thumbnails(error)
 
             with cls.lock:
                 t = time.time() - t
