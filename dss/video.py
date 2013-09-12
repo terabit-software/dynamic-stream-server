@@ -1,4 +1,6 @@
 import time
+import warnings
+
 try:
     # Python 3
     from urllib.request import urlopen
@@ -241,7 +243,10 @@ class Video(object):
             if nclients <= 0:
                 continue
 
-            cls.start(stream['name'], nclients)
+            try:
+                cls.start(stream['name'], nclients)
+            except KeyError:
+                warnings.warn('Invalid stream name: %r' % stream['name'])
 
     @classmethod
     def auto_start(cls):
