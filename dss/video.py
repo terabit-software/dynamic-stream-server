@@ -11,6 +11,7 @@ except ImportError:
 from .config import config
 from .providers import Providers
 from .tools import show, process, thread, noxml
+from .stats import StreamStats
 
 
 class StreamHTTPClient(object):
@@ -53,38 +54,6 @@ class StreamHTTPClient(object):
     def __bool__(self):
         return not self._stopped_info
     __nonzero__ = __bool__
-
-
-class StreamStats(object):
-    class Stats(object):
-        def __init__(self, total=0, error_count=0):
-            self._total = total
-            self._count = error_count
-            self._lock = thread.Lock()
-
-        def inc(self, error):
-            with self._lock:
-                self._total += 1
-                if error:
-                    self._count += 1
-
-        def error(self):
-            try:
-                return self._count / self._total
-            except ZeroDivisionError:
-                return 0.
-
-        def ok(self):
-            return 1 - self.error()
-
-    class TimeStats(Stats):
-        pass
-
-    def __init__(self):
-        self.thumbnail = self.Stats()
-
-    def metric(self):
-        return self.thumbnail.ok() * 100
 
 
 class Stream(object):
