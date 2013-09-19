@@ -10,7 +10,7 @@ except ImportError:
 
 from .config import config
 from .providers import Providers
-from .tools import process, thread, noxml
+from .tools import show, process, thread, noxml
 
 
 class StreamHTTPClient(object):
@@ -144,7 +144,7 @@ class Stream(object):
             self.cnt += k
         if not self.proc and not self.proc_run:
             self.proc_start()
-        print(self)
+        show(self)
         return self
 
     def dec(self, http=False):
@@ -156,7 +156,7 @@ class Stream(object):
                 self.cnt -= 1
         if not self.clients:
             self.proc_stop()
-        print(self)
+        show(self)
         return self
 
     def _proc_msg(self, pid, msg):
@@ -171,17 +171,17 @@ class Stream(object):
             while True:
                 with self.fn() as self.proc:
                     pid = self.proc and self.proc.pid
-                    print(self._proc_msg(pid, start_msg))
+                    show(self._proc_msg(pid, start_msg))
                     self.proc.wait()
                     self.proc = None
 
                     if self.proc_run:  # Should be running, but isn't
-                        print(self._proc_msg(pid, 'died'))
+                        show(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
                         if self.proc_run:  # It might have been stopped after waiting
                             start_msg = 'restarted'
                             continue
-                    print(self._proc_msg(pid, 'stopped'))
+                    show(self._proc_msg(pid, 'stopped'))
                     break
 
         self.thread = thread.Thread(worker).start()
