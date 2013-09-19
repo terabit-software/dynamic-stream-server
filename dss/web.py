@@ -65,7 +65,7 @@ class Server(socketserver.ThreadingMixIn, server.HTTPServer):
     host = config.get('local', 'addr')
     port = config.getint('local', 'port')
 
-    tcp_retry = 10 #seconds
+    tcp_retry = 10  # seconds
     daemon_threads = True
 
     def __init__(self):
@@ -89,4 +89,3 @@ class Server(socketserver.ThreadingMixIn, server.HTTPServer):
             self.server_close()
         except Exception:
             pass
-

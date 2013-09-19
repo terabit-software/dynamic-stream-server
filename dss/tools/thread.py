@@ -39,7 +39,7 @@ if sys.version_info < (3, 2):
                 return self._lock.acquire(True)
 
             endtime = time() + timeout
-            delay = 0.0005 # 500us
+            delay = 0.0005  # 500us
             gotit = False
             while True:
                 gotit = self._lock.acquire(False)
@@ -195,7 +195,8 @@ class Condition(object):
             try:
                 waiter.release()
             except RuntimeError:
-                pass # This waiter might have been released by another condition
+                pass  # This waiter might have been released
+                      # by another condition
             self._remove_waiter(waiter)
 
     def notify_all(self):

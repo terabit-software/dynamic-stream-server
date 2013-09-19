@@ -2,7 +2,6 @@
 import importlib
 import json
 from os import path
-import os
 import warnings
 import makeobj
 import time
@@ -13,6 +12,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from .config import config, dirname
+from .tools import show
 
 
 def _get_from_file(path):
@@ -82,7 +82,7 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
         except IOError:
             pass
         except Exception as e:
-            print("Error when loading streams data from cache:", repr(e))
+            show("Error when loading streams data from cache:", repr(e))
 
     if Place.url in places:
         try:
@@ -91,7 +91,7 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
                 save = tmp
             return _get_from_url(url, parser, save=save)
         except Exception as e:
-            print("Error when loading streams data from web:", repr(e))
+            show("Error when loading streams data from web:", repr(e))
 
     if cached_data:
         warnings.warn('Using possibly outdated cache for %r provider '
