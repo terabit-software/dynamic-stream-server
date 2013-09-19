@@ -2,7 +2,6 @@
 import importlib
 import json
 from os import path
-import os
 import warnings
 import makeobj
 import time

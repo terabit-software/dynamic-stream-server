@@ -13,7 +13,7 @@ def _input_cmd(cmd_input, input, add_probe=True, bin=None):
     args += shlex.split(cmd_input)
     if add_probe:
         args += ['-probesize', probe]
-    args += ['-i',  input]
+    args += ['-i', input]
     return args
 
 
@@ -31,7 +31,7 @@ def cmd_outputs(cmd_input, input, base_cmd_output, cmd_output_specific, outputs,
     """
     args = _input_cmd(cmd_input, input, add_probe, bin)
 
-    base_cmd_output =  shlex.split(base_cmd_output)
+    base_cmd_output = shlex.split(base_cmd_output)
 
     for out_cmd, out in zip(cmd_output_specific, outputs):
         args += base_cmd_output

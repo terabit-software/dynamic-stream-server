@@ -8,6 +8,7 @@ from .tools import show, thread, process, ffmpeg
 from .providers import Providers
 from .video import Video
 
+
 class Thumbnail(object):
     run = True
     clean = True
