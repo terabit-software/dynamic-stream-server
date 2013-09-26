@@ -1,28 +1,19 @@
 import time
-try:
-    # Python 3
-    from http import server
-    import socketserver
-    import urllib.parse as urlparse
-    from urllib.request import urlopen
-except ImportError:
-    import BaseHTTPServer as server
-    import SocketServer as socketserver
-    import urlparse
-    from urllib2 import urlopen
+import tornado.ioloop
+import tornado.web
 
 from . import video
 from .config import config
+from .tools import show
 
 
-class Handler(server.BaseHTTPRequestHandler):
+class VideoStreamHandler(tornado.web.RequestHandler):
     timeout = config.getint('local', 'http_client_timeout')
     max_timeout = config.getint('local', 'http_client_timeout_max')
 
     def handle_information(self):
-        info = urlparse.urlparse(self.path)
         try:
-            data = info.path.strip('/').split('/')
+            data = self.path_args[0].strip('/').split('/')
             id, action = data[:2]
         except Exception:
             return 404
@@ -47,34 +38,38 @@ class Handler(server.BaseHTTPRequestHandler):
             video.Video.stop(id)
         return 200
 
-    def do_GET(self):
+    def get(self, *args, **kw):
         try:
             code = self.handle_information()
         except Exception as e:
-            print('Error on request handling: %r' % e)
-            self.send_response(500)
+            show('Error on request handling: %r' % e)
+            self.set_status(500)
         else:
-            self.send_response(code)
+            self.set_status(code)
         finally:
-            self.end_headers()
+            self.finish()
 
-    do_POST = do_GET
+    post = get
 
 
-class Server(socketserver.ThreadingMixIn, server.HTTPServer):
+class Server(object):
     host = config.get('local', 'addr')
     port = config.getint('local', 'port')
+
+    application = tornado.web.Application([
+        (r"/stream/(.*)", VideoStreamHandler),
+    ])
 
     tcp_retry = 10  # seconds
     daemon_threads = True
 
     def __init__(self):
-        pass
+        self._instance = tornado.ioloop.IOLoop.instance()
 
     def start(self):
         while True:
             try:
-                server.HTTPServer.__init__(self, (self.host, self.port), Handler)
+                self.application.listen(self.port, self.host)
             except IOError:
                 print('Waiting TCP port to be used.')
                 time.sleep(self.tcp_retry)
@@ -82,10 +77,10 @@ class Server(socketserver.ThreadingMixIn, server.HTTPServer):
                 print('Connected to %s:%s' % (self.host, self.port))
                 break
 
-        self.serve_forever()
+        self._instance.start()
 
     def stop(self):
         try:
-            self.server_close()
+            self._instance.stop()
         except Exception:
             pass

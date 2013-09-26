@@ -10,6 +10,7 @@ py_version = sys.version_info[:2]
 
 # All versions
 install_requires = [
+    'tornado',
     'setuptools',
     'makeobj',
 ]
