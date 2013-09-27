@@ -24,6 +24,7 @@ if py_version < (3, 2):
 if py_version in [(2, 6), (3, 0)]:
     install_requires += [
         'importlib',
+        'ordereddict',
     ]
 
 
