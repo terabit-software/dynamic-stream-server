@@ -3,6 +3,7 @@ import tornado.ioloop
 import tornado.web
 
 from .config import config
+from .tools import show
 from .web_handlers import stream_control, stream_stats, info
 
 
@@ -27,10 +28,10 @@ class Server(object):
             try:
                 self.application.listen(self.port, self.host)
             except IOError:
-                print('Waiting TCP port to be used.')
+                show('Waiting TCP port to be used.')
                 time.sleep(self.tcp_retry)
             else:
-                print('Connected to %s:%s' % (self.host, self.port))
+                show('Connected to %s:%s' % (self.host, self.port))
                 break
 
         self._instance.start()

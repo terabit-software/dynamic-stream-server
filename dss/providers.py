@@ -47,7 +47,6 @@ class BaseStreamProvider(object):
     def _streams(cls):
         if cls._stream_list is None:
             cls.execute_lazy_initialization()
-            print('STREAM LIST:', cls._stream_list)
         return cls._stream_list
 
     @classmethod
