@@ -3,7 +3,7 @@ import tornado.ioloop
 import tornado.web
 
 from .config import config
-from .web_handlers import stream_control
+from .web_handlers import stream_control, stream_stats, stream_info
 
 
 class Server(object):
@@ -11,7 +11,8 @@ class Server(object):
     port = config.getint('local', 'port')
 
     application = tornado.web.Application([
-        (r"/stream/(.*?)/(start|stop|http)/?(\d*)", stream_control.StreamControl),
+        (r'/control/(.*?)/(start|stop|http)/?(\d*)', stream_control.StreamControlHandler),
+        (r'/stats/([^/]*)/?(.*)', stream_stats.StreamStatsHandler),
     ])
 
     tcp_retry = 10  # seconds

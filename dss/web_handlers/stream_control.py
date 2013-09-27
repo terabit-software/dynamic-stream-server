@@ -6,7 +6,7 @@ from ..tools import show
 from ..config import config
 
 
-class StreamControl(tornado.web.RequestHandler):
+class StreamControlHandler(tornado.web.RequestHandler):
     timeout = config.getint('local', 'http_client_timeout')
     max_timeout = config.getint('local', 'http_client_timeout_max')
     min_timeout = config.getint('local', 'http_client_timeout_min')
@@ -34,8 +34,7 @@ class StreamControl(tornado.web.RequestHandler):
     def handle_stop(self, id):
         video.Video.stop(id)
 
-    def get(self, *args, **kw):
-        id, action = args[:2]
+    def get(self, id, action, *args, **kw):
 
         try:
             handle = getattr(self, 'handle_' + action)
