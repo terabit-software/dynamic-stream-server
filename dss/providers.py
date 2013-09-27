@@ -107,6 +107,14 @@ class BaseStreamProvider(object):
         return cls._number_id(id)
 
     @classmethod
+    def get_stream_data(cls, id):
+        """ Return stream data based on id
+        """
+        if cls._stream_data is None:
+            cls.execute_lazy_initialization()
+        return cls._stream_data[cls.get_stream(id)]
+
+    @classmethod
     def get_id(cls, stream):
         return cls.identifier + str(stream)
 
