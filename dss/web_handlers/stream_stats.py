@@ -21,6 +21,6 @@ class StreamStatsHandler(tornado.web.RequestHandler):
                 return
 
         self.set_header('Content-Type', 'application/json')
-        self.write(json.dumps(data))
+        self.finish(json.dumps(data))
 
     post = get

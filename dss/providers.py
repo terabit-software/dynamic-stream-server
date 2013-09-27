@@ -116,6 +116,8 @@ class BaseStreamProvider(object):
 
     @classmethod
     def get_id(cls, stream):
+        """ Get Id based on original stream number
+        """
         return cls.identifier + str(stream)
 
 
@@ -134,10 +136,14 @@ class NamedStreamProvider(BaseStreamProvider):
 
     @classmethod
     def get_stream(cls, id):
+        """ Retrieve stream name based on id.
+        """
         return cls._stream_list[cls._number_id(id)]
 
     @classmethod
     def get_id(cls, stream):
+        """ Get Id based on original stream name
+        """
         return cls.identifier + str(cls._stream_list.index(stream))
 
 

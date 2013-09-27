@@ -15,10 +15,10 @@ from .config import config, dirname
 from .tools import show
 
 
-def _get_from_file(path):
+def _get_from_file(file_path):
     """ Load camera data from local temp file.
     """
-    with open(path) as f:
+    with open(file_path) as f:
         return json.load(f)
 
 
@@ -103,6 +103,5 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
             warnings.warn('Using locally stored data for %r provider '
                           'as last resort.')
         return _get_from_file(path.join(dirname, name))
-
 
     raise ValueError('Could not load data from: %s' % places)
