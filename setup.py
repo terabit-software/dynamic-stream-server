@@ -10,6 +10,7 @@ py_version = sys.version_info[:2]
 
 # All versions
 install_requires = [
+    'tornado',
     'setuptools',
     'makeobj',
 ]
@@ -23,6 +24,7 @@ if py_version < (3, 2):
 if py_version in [(2, 6), (3, 0)]:
     install_requires += [
         'importlib',
+        'ordereddict',
     ]
 
 

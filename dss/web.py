@@ -1,91 +1,43 @@
 import time
-try:
-    # Python 3
-    from http import server
-    import socketserver
-    import urllib.parse as urlparse
-    from urllib.request import urlopen
-except ImportError:
-    import BaseHTTPServer as server
-    import SocketServer as socketserver
-    import urlparse
-    from urllib2 import urlopen
+import tornado.ioloop
+import tornado.web
 
-from . import video
 from .config import config
+from .tools import show
+from .web_handlers import stream_control, stream_stats, info
 
 
-class Handler(server.BaseHTTPRequestHandler):
-    timeout = config.getint('local', 'http_client_timeout')
-    max_timeout = config.getint('local', 'http_client_timeout_max')
-
-    def handle_information(self):
-        info = urlparse.urlparse(self.path)
-        try:
-            data = info.path.strip('/').split('/')
-            id, action = data[:2]
-        except Exception:
-            return 404
-
-        if action == 'start':
-            try:
-                video.Video.start(id)
-            except KeyError:
-                return 404
-        elif action == 'http':
-            try:
-                timeout = int(data[2])
-            except (IndexError, ValueError):
-                timeout = self.timeout
-            timeout = min(timeout, self.max_timeout)
-
-            try:
-                video.Video.start(id, http_wait=timeout)
-            except KeyError:
-                return 404
-        else:
-            video.Video.stop(id)
-        return 200
-
-    def do_GET(self):
-        try:
-            code = self.handle_information()
-        except Exception as e:
-            print('Error on request handling: %r' % e)
-            self.send_response(500)
-        else:
-            self.send_response(code)
-        finally:
-            self.end_headers()
-
-    do_POST = do_GET
-
-
-class Server(socketserver.ThreadingMixIn, server.HTTPServer):
+class Server(object):
     host = config.get('local', 'addr')
     port = config.getint('local', 'port')
+
+    application = tornado.web.Application([
+        (r'/control/(.*?)/(start|stop|http)/?(\d*)', stream_control.StreamControlHandler),
+        (r'/stats/([^/]*)/?(.*)', stream_stats.StreamStatsHandler),
+        (r'/info/(provider|stream)/?(.*)', info.InfoHandler),
+    ])
 
     tcp_retry = 10  # seconds
     daemon_threads = True
 
     def __init__(self):
-        pass
+        self._instance = tornado.ioloop.IOLoop.instance()
 
     def start(self):
         while True:
             try:
-                server.HTTPServer.__init__(self, (self.host, self.port), Handler)
+                self.application.listen(self.port, self.host)
             except IOError:
-                print('Waiting TCP port to be used.')
+                show('Waiting TCP port to be used.')
                 time.sleep(self.tcp_retry)
             else:
-                print('Connected to %s:%s' % (self.host, self.port))
+                show('Connected to %s:%s' % (self.host, self.port))
                 break
 
-        self.serve_forever()
+        self._instance.start()
 
     def stop(self):
         try:
-            self.server_close()
+            self._instance.stop()
         except Exception:
             pass

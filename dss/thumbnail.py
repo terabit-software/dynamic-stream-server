@@ -133,7 +133,7 @@ class Thumbnail(object):
                         show('Could not fetch:\n' + ', '.join(error))
 
                 error = set(error)
-                for s in cls.stream_list: # Record stats
+                for s in cls.stream_list:  # Record stats
                     Video.get_stream(s).stats.thumbnail.inc(s in error)
 
             if cls.run:

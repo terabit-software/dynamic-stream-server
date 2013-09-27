@@ -2,6 +2,7 @@ from dss.providers import Providers
 from dss.video import Video
 from dss.thumbnail import Thumbnail
 from dss.web import Server
+from dss.tools import show
 
 
 def main():
@@ -15,15 +16,15 @@ def main():
         server.start()
     except KeyboardInterrupt:
         server.stop()
-        print('Server Closed')
+        show('Server Closed')
 
-    print('Stopping streams...')
+    show('Stopping streams...')
     Video.terminate_streams()
-    print('Done!')
+    show('Done!')
 
-    print('Stopping thumbnail download...')
+    show('Stopping thumbnail download...')
     Thumbnail.stop_download()
-    print('Done!')
+    show('Done!')
 
 
 if __name__ == '__main__':

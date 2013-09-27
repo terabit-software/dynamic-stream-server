@@ -30,4 +30,7 @@ class StreamStats(object):
         self.thumbnail = self.Stats()
 
     def metric(self):
-        return self.thumbnail.ok() * 100
+        # TODO: add other metrics
+        return {
+            'thumbnail': self.thumbnail.ok() * 100,
+        }
