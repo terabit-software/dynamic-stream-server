@@ -55,7 +55,7 @@ class StreamStatsHandler(tornado.web.RequestHandler):
 
         original_metric = []
         if metric:
-            original_metric = metric.split(',')
+            original_metric = [x for x in metric.split(',') if x]
             metric = set(original_metric + ['id'])
             try:
                 data = [dict((m, d[m]) for m in metric) for d in data]
