@@ -8,7 +8,7 @@
         <script type="text/javascript">
             re = /\w+$/;
             var id = re.exec(document.location.search);
-            id = id !== null? id : 'C1';
+            id = id !== null? id[0] : 'C1';
             jwplayer("container1").setup({
                 height: 480,
                 width: 854,
