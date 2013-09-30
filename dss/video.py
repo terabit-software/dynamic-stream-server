@@ -65,6 +65,12 @@ class Stream(object):
         self.lock = thread.Lock()
         self.id = id
         provider = Providers.select(id)
+        try:
+            provider.get_stream(id)
+        except Exception:
+            # The prefix match but the id is not real
+            raise KeyError('Invalid id for {0.identifier!r} ({0.name}) provider'.format(provider))
+
         self.fn = lambda self=self: process.run_proc(
             self.id,
             provider.make_cmd(self.id),
