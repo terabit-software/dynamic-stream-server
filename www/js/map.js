@@ -37,7 +37,7 @@ function insereCamera(myLatlng,camera,map,labelCamera,icone){
 
 function buildVideoUrl(cam_id){
     var userAgent = navigator.userAgent.toLowerCase();
-    var url = 'viewer.html?id=C' + cam_id;
+    var url = 'viewer.html?id=' + cam_id;
 
     switch(userAgentDetect(userAgent)){
     case 0: // Nokia
@@ -47,7 +47,7 @@ function buildVideoUrl(cam_id){
     case 2:
     case 3:
     case 6: // Android
-        url='/hls/C'+cam_id+'/index.m3u8';
+        url='/hls/'+cam_id+'/index.m3u8';
         break;
     case 4: // blackberry
         document.write("Blackberry is not supported");
@@ -75,9 +75,9 @@ function userAgentDetect(userAg){
 }
 
 // insere a legenda das câmeras
-function insereCaption(marker, lblcamera, cam) {
-    var htmlContent = '<img src="/thumb/C' + cam + '.jpg" width="128" height="96" alt="Imagem não disponível"></img>'+
-                      '<br>Câmera ' + cam + '<br>' + lblcamera + '<br>';
+function insereCaption(marker, lblcamera, cam_id) {
+    var htmlContent = '<img src="/thumb/' + cam_id + '.jpg" width="320" height="240" alt="Imagem não disponível"></img>'+
+                      '<br>Camera ' + cam_id + '<br />' + lblcamera + '<br />';
     var infowindow = new google.maps.InfoWindow({content: htmlContent});
     google.maps.event.addListener(marker, 'mouseover', function() {
         infowindow.open(map,marker);

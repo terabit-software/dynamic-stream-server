@@ -4,8 +4,34 @@
     <script 
         type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyB8KVlH1GfziaVIot4IHEvTyMTTJVaLt2A&sensor=false&language=pt">
     </script>
-    <script type="text/javascript" src="js/cameras.js"></script>
     <script type="text/javascript" src="js/map.js"></script>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript">
+        function addCameras(map){
+            $.ajax({
+                url: '/info/provider',
+                success: function(data){
+                    $.each(data, function(x, obj){
+                        getProviderStreams(obj.id, map);
+                    });
+                }
+            });
+        }
+
+        function getProviderStreams(name, map){
+            $.ajax({
+                url: '/info/provider/' + name,
+                success: function(data){
+                    $.each(data, function(x, el){
+                            var pos = new google.maps.LatLng(el.geo[0], el.geo[1]);
+                            var icon = (el.status === undefined || el.status) ? 'on.png' : 'off.png';
+                            insereCamera(pos, el.id, map, el.name, icon);
+                    })
+                }
+            });
+        }
+
+    </script>
     <title>Stream Map</title>
 </head>
 <body onLoad="initialize()">
