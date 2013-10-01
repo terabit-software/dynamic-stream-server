@@ -6,6 +6,11 @@ from ..tools import show
 from ..config import config
 
 
+options = '|'.join([
+    'start', 'stop', 'http',
+])
+
+
 class StreamControlHandler(tornado.web.RequestHandler):
     timeout = config.getint('local', 'http_client_timeout')
     max_timeout = config.getint('local', 'http_client_timeout_max')

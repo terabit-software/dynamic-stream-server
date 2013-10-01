@@ -3,6 +3,10 @@ import json
 
 from .. import providers
 
+options = '|'.join([
+    'publisher', 'stream',
+])
+
 
 class InfoHandler(tornado.web.RequestHandler):
 
