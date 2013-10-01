@@ -9,6 +9,42 @@ Lock = threading.Lock
 RLock = threading.Lock
 
 
+class MetaLockedObject(type):
+    def __init__(cls, what, bases, dict):
+        super(MetaLockedObject, cls).__init__(what, bases, dict)
+        for name in dict.get('__locked_properties__', ()):
+            cls.lock_property(name)
+
+    def lock_property(cls, name):
+        """ Create a property for the named passed with getter and setter
+            functions accessing a "_name" variable through the instance lock.
+        """
+        attribute_name = '_' + name
+
+        def getter(self):
+            with self.lock:
+                return getattr(self, attribute_name)
+
+        def setter(self, value):
+            with self.lock:
+                setattr(self, attribute_name, value)
+
+        prop = property(getter, setter)
+        setattr(cls, name, prop)
+
+
+LockedObjectBase = MetaLockedObject('LockedObjectBase', (object,), {})
+
+
+class LockedObject(LockedObjectBase):
+    __locked_properties__ = ()
+
+    def __init__(self, lock=None):
+        # RLock object to reduce the possibilities of deadlocking
+        self.lock = lock or RLock()
+
+
+
 if sys.version_info < (3, 2):
     class Lock(object):
 
