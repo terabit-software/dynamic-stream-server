@@ -67,7 +67,7 @@ function buildVideoUrl(cam_id){
 function userAgentDetect(userAg){ 
   for(var i = 0; i < devices.length; i++) {
     if (userAg.search(devices[i]) > 0) {
-      document.write('User agent found: '+i);
+      //document.write('User agent found: '+i);
       return i;
     }
   }
