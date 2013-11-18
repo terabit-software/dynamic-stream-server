@@ -33,7 +33,7 @@ class CountStats(Stats):
     @measure.setter
     @thread.lock_method
     def measure(self, value):
-        return
+        return  # XXX FIXME
 
     @thread.lock_method
     def inc(self, error):
@@ -42,12 +42,35 @@ class CountStats(Stats):
             self.count += 1
 
 
+class TimedStats(Stats):
+
+    def __init__(self, total=0, uptime=0):
+        super(TimedStats, self).__init__(total, uptime)
+        self.death_count = 0
+
+    @thread.lock_method
+    def uptime(self, value):
+        self.measure += value
+        self.total += value
+
+    @thread.lock_method
+    def downtime(self, value):
+        self.total += value
+
+    @thread.lock_method
+    def died(self):
+        self.death_count += 1
+
+
 class StreamStats(object):
     def __init__(self):
         self.thumbnail = CountStats()
+        self.timed = TimedStats()
 
     def metric(self, percent=True):
         mult = 100 if percent else 1
         return {
             'thumbnail': self.thumbnail.result() * mult,
+            'time': self.timed.result() * mult,
+            'crash': self.timed.death_count,
         }
