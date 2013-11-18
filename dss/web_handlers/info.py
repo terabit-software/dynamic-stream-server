@@ -4,7 +4,7 @@ import json
 from .. import providers
 
 options = '|'.join([
-    'publisher', 'stream',
+    'provider', 'stream',
 ])
 
 
