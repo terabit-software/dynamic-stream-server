@@ -1,12 +1,13 @@
 import sys
 import threading
+import functools
 from time import time, sleep
 from collections import deque
 from itertools import islice
 
 
 Lock = threading.Lock
-RLock = threading.Lock
+RLock = threading.RLock
 
 
 class MetaLockedObject(type):
@@ -43,6 +44,18 @@ class LockedObject(LockedObjectBase):
         # RLock object to reduce the possibilities of deadlocking
         self.lock = lock or RLock()
 
+
+def lock_method(function):
+    """ Decorator for methods of `LockedObject` subclasses.
+        It acquires and releases the instance lock before and
+        after the execution of the function.
+    """
+    @functools.wraps(function)
+    def decorator(self, *args, **kw):
+        with self.lock:
+            return function(self, *args, **kw)
+
+    return decorator
 
 
 if sys.version_info < (3, 2):
@@ -137,7 +150,7 @@ class Condition(object):
     def _is_owned(self):
         # Return True if lock is owned by current_thread.
         # This method is called only if __lock doesn't have _is_owned().
-        if self._lock.acquire(0):
+        if self._lock.acquire(False):
             self._lock.release()
             return False
         else:

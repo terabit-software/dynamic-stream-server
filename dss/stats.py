@@ -2,13 +2,13 @@ from .tools import thread
 
 
 class Stats(thread.LockedObject):
-    __locked_properties__ = ('total', 'measures')
 
     def __init__(self, total=0, measure=0):
         super(Stats, self).__init__()
         self.total = total
         self.measure = measure
 
+    @thread.lock_method
     def result(self):
         """ The element being measured divided by the total of occurrences.
             This should always be a value between 0 and 1 (inclusive).
@@ -20,20 +20,22 @@ class Stats(thread.LockedObject):
 
 
 class CountStats(Stats):
-    __locked_properties__ = ('count',)
 
     def __init__(self, total=0, error_count=0):
         super(CountStats, self).__init__(total)
         self.count = error_count
 
     @property
+    @thread.lock_method
     def measure(self):
-        return self.total - self._count
+        return self.total - self.count
 
     @measure.setter
+    @thread.lock_method
     def measure(self, value):
         return
 
+    @thread.lock_method
     def inc(self, error):
         self.total += 1
         if error:
