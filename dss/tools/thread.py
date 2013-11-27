@@ -8,6 +8,10 @@ from itertools import islice
 Lock = threading.Lock
 RLock = threading.Lock
 
+# Always raise RuntimeError to be compatible with Py3K
+# But, capture both exceptions in case of Py2K
+ThreadError = RuntimeError
+ThreadErrorCapture = (threading.ThreadError, RuntimeError)
 
 if sys.version_info < (3, 2):
     class Lock(object):
@@ -30,7 +34,7 @@ if sys.version_info < (3, 2):
         # Hook for acquire to block with timeout on old Python versions
         def acquire(self, blocking=True, timeout=-1):
             if not blocking and timeout > 0:
-                raise RuntimeError('Cannot have a timeout when not blocking.')
+                raise ThreadError('Cannot have a timeout when not blocking.')
 
             if not blocking:
                 return self._lock.acquire(False)
@@ -142,7 +146,7 @@ class Condition(object):
             raise ValueError("all the conditions must use the same lock")
 
         if not some_cond._is_owned():
-            raise RuntimeError("cannot wait on un-acquired lock")
+            raise ThreadError("cannot wait on un-acquired lock")
 
         try:
             predicates = conditions.values()
@@ -186,7 +190,7 @@ class Condition(object):
 
     def notify(self, n=1):
         if not self._is_owned():
-            raise RuntimeError("cannot notify on un-acquired lock")
+            raise ThreadError("cannot notify on un-acquired lock")
         all_waiters = self._waiters
         waiters_to_notify = deque(islice(all_waiters, n))
         if not waiters_to_notify:
@@ -194,7 +198,7 @@ class Condition(object):
         for waiter in waiters_to_notify:
             try:
                 waiter.release()
-            except RuntimeError:
+            except ThreadErrorCapture:
                 pass  # This waiter might have been released
                       # by another condition
             self._remove_waiter(waiter)
@@ -223,5 +227,5 @@ class Thread(threading.Thread):
 
     def stop(self):
         if not self._stop_fn:
-            raise RuntimeError('Not able stop thread!')
+            raise ThreadError('Not able stop thread!')
         self._stop_fn()
