@@ -3,35 +3,32 @@ var markersArray = [];
 var marker;
 var map;
 
-function initialize() {
+function initialize(pinPoints) {
   var myOptions = {
     center: new google.maps.LatLng(-22.934365, -43.329048),
     zoom: 11,
     mapTypeId: google.maps.MapTypeId.ROADMAP
   };
   map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-  addCamadas(map);
-}
-
-//adiciona as camadas de trânsito e câmeras no mapa
-function addCamadas(map){
-  addCameras(map);
+  var trafficLayer = new google.maps.TrafficLayer();
+  trafficLayer.setMap(map);
+  pinPoints(map);
 }
 
 //insere o maker e configura as funções do click
-function insereCamera(myLatlng,camera,map,labelCamera,icone){
+function insertPinPoint(myLatlng, item, map, label, icon){
   marker = new google.maps.Marker({
-    position: myLatlng, 
+    position: myLatlng,
     map: map,
     flat: true,
-    icon : icone
+    icon : icon
   });
 
   google.maps.event.addListener(marker, 'click', function() {
-    window.location=buildVideoUrl(camera);
+    window.location=buildVideoUrl(item);
   });
     
-  insereCaption(marker, labelCamera,camera);
+  insertCaption(marker, label, item);
   markersArray.push(marker);
 }
 
@@ -74,17 +71,30 @@ function userAgentDetect(userAg){
   return -1;
 }
 
+function htmlContent(label, cam_id){
+    var time = Date.now();
+    var base = 5 * 60 * 1000;  // 5 minutes cache
+    time = base * Math.round(time / base);
+
+    return '<img src="/thumb/' + cam_id + '.jpg?' + time + '" ' +
+           'width="320" height="240" alt="Image not available"></img>'+
+           '<br>Camera ' + cam_id + '<br />' + label + '<br />';
+}
+
 // insere a legenda das câmeras
-function insereCaption(marker, lblcamera, cam_id) {
-    var htmlContent = '<img src="/thumb/' + cam_id + '.jpg" width="320" height="240" alt="Imagem não disponível"></img>'+
-                      '<br>Camera ' + cam_id + '<br />' + lblcamera + '<br />';
-    var infowindow = new google.maps.InfoWindow({content: htmlContent});
+function insertCaption(marker, label, cam_id) {
+    var infowindow = null;
+
     google.maps.event.addListener(marker, 'mouseover', function() {
-        infowindow.open(map,marker);
+        infowindow = new google.maps.InfoWindow({
+            content: htmlContent(label, cam_id)
+        });
+        infowindow.open(map, marker);
     });
 
     google.maps.event.addListener(marker, 'mouseout', function() {
-    infowindow.close();
+        infowindow.close();
+        infowindow = null;
     });
 }
 
