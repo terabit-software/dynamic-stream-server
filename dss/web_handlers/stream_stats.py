@@ -32,7 +32,10 @@ class StreamStatsHandler(tornado.web.RequestHandler):
 
     def get(self, id, metric=None, *args, **kw):
         stream = provider = None
-        use_percentage = int(self.get_argument('percent', True))
+        try:
+            use_percentage = int(self.get_argument('percent'))
+        except:
+            use_percentage = True
 
         try:
             stream = video.Video.get_stream(id)
