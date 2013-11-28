@@ -16,9 +16,10 @@ class Server(object):
     port = config.getint('local', 'port')
 
     application = tornado.web.Application([
-        (r'/control/(.*?)/(start|stop|http)/?(\d*)', stream_control.StreamControlHandler),
+        (r'/control/(.*?)/(' + stream_control.options + r')/?(\d*)',
+         stream_control.StreamControlHandler),
         (r'/stats/([^/]*)/?(.*)', stream_stats.StreamStatsHandler),
-        (r'/info/(provider|stream)/?(.*)', info.InfoHandler),
+        (r'/info/(' + info.options + r')/?(.*)', info.InfoHandler),
         (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH})
     ])
 

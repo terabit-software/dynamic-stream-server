@@ -145,12 +145,14 @@ class Stream(object):
             start_msg = 'started'
             while True:
                 with self.fn() as self.proc:
+                    self.stats.timed.started()
                     pid = self.proc and self.proc.pid
                     show(self._proc_msg(pid, start_msg))
                     self.proc.wait()
                     self.proc = None
 
                     if self.proc_run:  # Should be running, but isn't
+                        self.stats.timed.died()
                         show(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
                         if self.proc_run:  # It might have been stopped after waiting
