@@ -84,6 +84,8 @@ class TimedStats(Stats):
         self._last_start = value
 
         self._warmup.append(elapsed)
+        self._total += elapsed  # Warmup time does count as downtime
+
         if self._status is StatusTiming.DIED:
             self.downtime()
 
@@ -94,20 +96,26 @@ class TimedStats(Stats):
         if value is None:
             value = time.time() - self._last_start
 
-        self.measure += value
-        self.total += value
+        if self._status is StatusTiming.ON:
+            self._measure += value
+        self._total += value
         self._status = StatusTiming.STOPPED
 
     @thread.lock_method
     def downtime(self, value=None):
         if value is None:
             value = time.time() - self._last_shutdown
-        self.total += value
+            self._last_shutdown = None
+        self._total += value
 
     @thread.lock_method
     def died(self):
         self.death_count += 1
-        self._last_shutdown = time.time()
+        if self._last_shutdown is None:
+            # Otherwise, the stream is crashing non-stop
+            # So it should keep the original time for correct
+            # uptime calculation.
+            self._last_shutdown = time.time()
         self._status = StatusTiming.DIED
 
     @thread.lock_method
@@ -120,6 +128,12 @@ class TimedStats(Stats):
     def current_uptime(self):
         if self._status is StatusTiming.ON:
             return time.time() - self._last_start
+        return 0
+
+    @thread.lock_method
+    def current_downtime(self):
+        if self._status is StatusTiming.DIED:
+            return time.time() - self._last_shutdown
         return 0
 
     @property
@@ -135,7 +149,7 @@ class TimedStats(Stats):
     @property
     @thread.lock_method
     def total(self):
-        return self._total + self.current_uptime()
+        return self._total + self.current_uptime() + self.current_downtime()
 
     @total.setter
     @thread.lock_method
@@ -155,4 +169,15 @@ class StreamStats(object):
             'uptime': round(self.timed.result() * mult, 3),
             'crash': self.timed.death_count,
             'warmup': round(self.timed.warmup_mean(), 3),
+            #'__degub__': {
+            #    'measure': self.timed.measure,
+            #    '_measure': self.timed._measure,
+            #    'total': self.timed.total,
+            #    '_total': self.timed._total,
+            #    'current_uptime': self.timed.current_uptime(),
+            #    'current_downtime': self.timed.current_downtime(),
+            #    '_warmup': list(self.timed._warmup),
+            #    'last_start': self.timed._last_start,
+            #    'last_shutdown': self.timed._last_shutdown,
+            #}
         }

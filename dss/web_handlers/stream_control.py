@@ -60,8 +60,6 @@ class StreamControlHandler(tornado.web.RequestHandler):
 
         # Acount for camera uptime
         stream.stats.timed.uptime()
-        if stream.alive:
-            stream.stats.timed.died()
 
         #show('Nginx reported {STOP}:', stream)
 

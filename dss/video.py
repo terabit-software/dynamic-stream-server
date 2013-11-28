@@ -152,6 +152,7 @@ class Stream(object):
                     self.proc = None
 
                     if self.proc_run:  # Should be running, but isn't
+                        self.stats.timed.died()
                         show(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
                         if self.proc_run:  # It might have been stopped after waiting
