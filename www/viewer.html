@@ -1,31 +1,29 @@
 <html>
     <head>
         <script type="text/javascript" src="jwplayer.js"></script>
+        <title>Stream Viewer</title>
     </head>
     <body>
-        <table>
-        <tr>
-        <td>
         <div id="container1">Loading the player ...</div>
         <script type="text/javascript">
             re = /\w+$/;
-            var id = re.exec(document.location.search)[0];
-            if(id == null){id = 'C1';}
-            console.log(id);
+            var id = re.exec(document.location.search);
+            id = id !== null? id[0] : 'C1';
             jwplayer("container1").setup({
+                height: 480,
+                width: 854,
                 modes: [
                     {   type: "flash",
                         src: "player.swf",
                         config: {
                             bufferlength: 1,
                             file: id,
-                            streamer: "rtmp://{local_ip}/cetrio",
+                            streamer: "rtmp://" + document.location.hostname + ':1935' + "/cetrio",
                             provider: "rtmp"
                         }
                     }
                 ]
             });
         </script>
-        </td>
     </body>
 </html>

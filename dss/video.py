@@ -1,4 +1,7 @@
+from __future__ import division
 import time
+import warnings
+
 try:
     # Python 3
     from urllib.request import urlopen
@@ -7,10 +10,11 @@ except ImportError:
 
 from .config import config
 from .providers import Providers
-from .tools import process, thread, noxml
+from .tools import show, process, thread, noxml
+from .stats import StreamStats
 
 
-class HTTPClient(object):
+class StreamHTTPClient(object):
     """ Emulate the behaviour of a RTMP client when there's an HTTP access
         for a certain Stream. If no other HTTP access is made within the
         timeout period, the `Stream` instance will be decremented.
@@ -53,7 +57,7 @@ class HTTPClient(object):
 
 
 class Stream(object):
-    _ffmpeg =  config['ffmpeg']
+    _ffmpeg = config['ffmpeg']
     run_timeout = _ffmpeg.getint('timeout')
     reload_timeout = _ffmpeg.getint('reload')
 
@@ -61,6 +65,12 @@ class Stream(object):
         self.lock = thread.Lock()
         self.id = id
         provider = Providers.select(id)
+        try:
+            provider.get_stream(id)
+        except Exception:
+            # The prefix match but the id is not real
+            raise KeyError('Invalid id for {0.identifier!r} ({0.name}) provider'.format(provider))
+
         self.fn = lambda self=self: process.run_proc(
             self.id,
             provider.make_cmd(self.id),
@@ -71,7 +81,8 @@ class Stream(object):
         self.proc = None
         self.thread = None
         self.timeout = timeout
-        self.http_client = HTTPClient(self)
+        self.http_client = StreamHTTPClient(self)
+        self.stats = StreamStats()
 
     def __repr__(self):
         pid = self.proc.pid if self.proc else None
@@ -108,7 +119,7 @@ class Stream(object):
             self.cnt += k
         if not self.proc and not self.proc_run:
             self.proc_start()
-        print(self)
+        show(self)
         return self
 
     def dec(self, http=False):
@@ -120,7 +131,7 @@ class Stream(object):
                 self.cnt -= 1
         if not self.clients:
             self.proc_stop()
-        print(self)
+        show(self)
         return self
 
     def _proc_msg(self, pid, msg):
@@ -134,18 +145,20 @@ class Stream(object):
             start_msg = 'started'
             while True:
                 with self.fn() as self.proc:
+                    self.stats.timed.started()
                     pid = self.proc and self.proc.pid
-                    print(self._proc_msg(pid, start_msg))
+                    show(self._proc_msg(pid, start_msg))
                     self.proc.wait()
                     self.proc = None
 
                     if self.proc_run:  # Should be running, but isn't
-                        print(self._proc_msg(pid, 'died'))
+                        self.stats.timed.died()
+                        show(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
                         if self.proc_run:  # It might have been stopped after waiting
                             start_msg = 'restarted'
                             continue
-                    print(self._proc_msg(pid, 'stopped'))
+                    show(self._proc_msg(pid, 'stopped'))
                     break
 
         self.thread = thread.Thread(worker).start()
@@ -241,7 +254,10 @@ class Video(object):
             if nclients <= 0:
                 continue
 
-            cls.start(stream['name'], nclients)
+            try:
+                cls.start(stream['name'], nclients)
+            except KeyError:
+                warnings.warn('Invalid stream name: %r' % stream['name'])
 
     @classmethod
     def auto_start(cls):

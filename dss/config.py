@@ -8,15 +8,14 @@ import configparser
 
 from .tools import pseudo_list
 
+
 ### Fixing the SectionProxy class from configparser module.
-#noinspection PyCallingNonCallable
 def _section_getattr_replacement(self, attr):
     if not attr.startswith('get'):
         raise AttributeError(attr)
     fn = getattr(self.parser, attr)
     return lambda *args, **kw: fn(self.name, *args, **kw)
 
-#noinspection PyUnresolvedReferences
 configparser.SectionProxy.__getattr__ = _section_getattr_replacement
 
 
@@ -65,7 +64,7 @@ except Exception:
     pass
 else:
     for sec in _local_config.sections():
-        for k,v in _local_config.items(sec):
+        for k, v in _local_config.items(sec):
             config[sec][k] = v
 
 

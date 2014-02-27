@@ -1,13 +1,66 @@
 import sys
 import threading
+import functools
 from time import time, sleep
 from collections import deque
 from itertools import islice
 
 
 Lock = threading.Lock
-RLock = threading.Lock
+RLock = threading.RLock
 
+
+class MetaLockedObject(type):
+    def __init__(cls, what, bases, dict):
+        super(MetaLockedObject, cls).__init__(what, bases, dict)
+        for name in dict.get('__locked_properties__', ()):
+            cls.lock_property(name)
+
+    def lock_property(cls, name):
+        """ Create a property for the named passed with getter and setter
+            functions accessing a "_name" variable through the instance lock.
+        """
+        attribute_name = '_' + name
+
+        def getter(self):
+            with self.lock:
+                return getattr(self, attribute_name)
+
+        def setter(self, value):
+            with self.lock:
+                setattr(self, attribute_name, value)
+
+        prop = property(getter, setter)
+        setattr(cls, name, prop)
+
+
+LockedObjectBase = MetaLockedObject('LockedObjectBase', (object,), {})
+
+
+class LockedObject(LockedObjectBase):
+    __locked_properties__ = ()
+
+    def __init__(self, lock=None):
+        # RLock object to reduce the possibilities of deadlocking
+        self.lock = lock or RLock()
+
+
+def lock_method(function):
+    """ Decorator for methods of `LockedObject` subclasses.
+        It acquires and releases the instance lock before and
+        after the execution of the function.
+    """
+    @functools.wraps(function)
+    def decorator(self, *args, **kw):
+        with self.lock:
+            return function(self, *args, **kw)
+
+    return decorator
+
+# Always raise RuntimeError to be compatible with Py3K
+# But, capture both exceptions in case of Py2K
+ThreadError = RuntimeError
+ThreadErrorCapture = (threading.ThreadError, RuntimeError)
 
 if sys.version_info < (3, 2):
     class Lock(object):
@@ -30,7 +83,7 @@ if sys.version_info < (3, 2):
         # Hook for acquire to block with timeout on old Python versions
         def acquire(self, blocking=True, timeout=-1):
             if not blocking and timeout > 0:
-                raise RuntimeError('Cannot have a timeout when not blocking.')
+                raise ThreadError('Cannot have a timeout when not blocking.')
 
             if not blocking:
                 return self._lock.acquire(False)
@@ -39,7 +92,7 @@ if sys.version_info < (3, 2):
                 return self._lock.acquire(True)
 
             endtime = time() + timeout
-            delay = 0.0005 # 500us
+            delay = 0.0005  # 500us
             gotit = False
             while True:
                 gotit = self._lock.acquire(False)
@@ -101,7 +154,7 @@ class Condition(object):
     def _is_owned(self):
         # Return True if lock is owned by current_thread.
         # This method is called only if __lock doesn't have _is_owned().
-        if self._lock.acquire(0):
+        if self._lock.acquire(False):
             self._lock.release()
             return False
         else:
@@ -142,7 +195,7 @@ class Condition(object):
             raise ValueError("all the conditions must use the same lock")
 
         if not some_cond._is_owned():
-            raise RuntimeError("cannot wait on un-acquired lock")
+            raise ThreadError("cannot wait on un-acquired lock")
 
         try:
             predicates = conditions.values()
@@ -186,7 +239,7 @@ class Condition(object):
 
     def notify(self, n=1):
         if not self._is_owned():
-            raise RuntimeError("cannot notify on un-acquired lock")
+            raise ThreadError("cannot notify on un-acquired lock")
         all_waiters = self._waiters
         waiters_to_notify = deque(islice(all_waiters, n))
         if not waiters_to_notify:
@@ -194,8 +247,9 @@ class Condition(object):
         for waiter in waiters_to_notify:
             try:
                 waiter.release()
-            except RuntimeError:
-                pass # This waiter might have been released by another condition
+            except ThreadErrorCapture:
+                pass  # This waiter might have been released
+                      # by another condition
             self._remove_waiter(waiter)
 
     def notify_all(self):
@@ -222,5 +276,5 @@ class Thread(threading.Thread):
 
     def stop(self):
         if not self._stop_fn:
-            raise RuntimeError('Not able stop thread!')
+            raise ThreadError('Not able stop thread!')
         self._stop_fn()

@@ -52,4 +52,3 @@ def load_node(root, root_tag=False, lists=()):
         return None
 
     return place
-

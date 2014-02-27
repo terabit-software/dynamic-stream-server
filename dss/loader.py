@@ -2,7 +2,9 @@
 import importlib
 import json
 from os import path
+import warnings
 import makeobj
+import time
 
 try:
     from urllib.request import urlopen
@@ -10,12 +12,13 @@ except ImportError:
     from urllib2 import urlopen
 
 from .config import config, dirname
+from .tools import show
 
 
-def _get_from_file(path):
+def _get_from_file(file_path):
     """ Load camera data from local temp file.
     """
-    with open(path) as f:
+    with open(file_path) as f:
         return json.load(f)
 
 
@@ -65,17 +68,21 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
         If not found, use fallback data.
     """
     tmp = config.get('cache', 'dir')
+    cached_data = None
 
     if Place.cache in places:
         basename = path.basename(name)
         tmp = path.join(tmp, basename)
+        valid_for = config.getint('cache', 'valid_for')
 
         try:
-            return _get_from_file(tmp)
+            cached_data = _get_from_file(tmp)
+            if time.time() - path.getmtime(tmp) < valid_for:
+                return cached_data
         except IOError:
             pass
         except Exception as e:
-            print("Error when loading streams data from cache:", repr(e))
+            show("Error when loading streams data from cache:", repr(e))
 
     if Place.url in places:
         try:
@@ -84,9 +91,17 @@ def get_streams(name=None, url=None, parser=None, places=all_places):
                 save = tmp
             return _get_from_url(url, parser, save=save)
         except Exception as e:
-            print("Error when loading streams data from web:", repr(e))
+            show("Error when loading streams data from web:", repr(e))
+
+    if cached_data:
+        warnings.warn('Using possibly outdated cache for %r provider '
+                      'because no other source was available' % name)
+        return cached_data
 
     if Place.file:
+        if len(places) > 1:  # Any other place should have higher priority
+            warnings.warn('Using locally stored data for %r provider '
+                          'as last resort.')
         return _get_from_file(path.join(dirname, name))
 
     raise ValueError('Could not load data from: %s' % places)

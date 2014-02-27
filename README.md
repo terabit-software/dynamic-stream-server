@@ -93,6 +93,7 @@ Other:
 
     You may have to replace `exec_play` and `exec_play_done` to `on_play` and `on_play_done` respectively
     on `nginx.conf` and remove the call to `curl`.
+
     You should change all the paths on `local.conf` and `nginx.conf` to be compliant with Windows.
 
 

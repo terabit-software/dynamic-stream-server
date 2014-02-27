@@ -39,4 +39,3 @@ class LoadTest(unittest.TestCase):
             '{1:}': TypeError,
             '{:1}': TypeError,
         })
-

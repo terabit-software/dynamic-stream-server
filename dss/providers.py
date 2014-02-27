@@ -1,6 +1,12 @@
 import glob
 import os
 import re
+import sys
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 from .config import Parser, config, dirname
 from .tools import ffmpeg
@@ -21,7 +27,8 @@ class BaseStreamProvider(object):
         _rtmp_server['addr'],
         _rtmp_server['app']
     ) + '{0}'
-    stream_list = None
+    _stream_list = None
+    _stream_data = None
 
     @classmethod
     def make_cmd(cls, id):
@@ -38,9 +45,15 @@ class BaseStreamProvider(object):
 
     @classmethod
     def _streams(cls):
-        if cls.stream_list is None:
-            cls.stream_list = cls.lazy_initialization()
-        return cls.stream_list
+        if cls._stream_list is None:
+            cls.execute_lazy_initialization()
+        return cls._stream_list
+
+    @classmethod
+    def execute_lazy_initialization(cls):
+        cls._stream_data = cls.lazy_initialization()
+        cls._stream_list = list(cls._stream_data)
+        cls.post_initialization()
 
     @classmethod
     def lazy_initialization(cls):
@@ -51,11 +64,28 @@ class BaseStreamProvider(object):
             If the list is supplied in the class definition, it may delay
             the program start needlessly.
         """
-        return []
+        return {}
+
+    @classmethod
+    def post_initialization(cls):
+        """ Set id information after stream data initialization
+        """
+        for k, v in cls._stream_data.items():
+            v['id'] = cls.get_id(k)
 
     @classmethod
     def streams(cls):
+        """ Get all streams ids
+        """
         return [cls.make_id(x) for x in cls._streams()]
+
+    @classmethod
+    def stream_data(cls):
+        """ Complete stream information in a dictionary
+        """
+        if cls._stream_data is None:
+            cls.execute_lazy_initialization()
+        return cls._stream_data
 
     @classmethod
     def _number_id(cls, id):
@@ -76,7 +106,17 @@ class BaseStreamProvider(object):
         return cls._number_id(id)
 
     @classmethod
+    def get_stream_data(cls, id):
+        """ Return stream data based on id
+        """
+        if cls._stream_data is None:
+            cls.execute_lazy_initialization()
+        return cls._stream_data[cls.get_stream(id)]
+
+    @classmethod
     def get_id(cls, stream):
+        """ Get Id based on original stream number
+        """
         return cls.identifier + str(stream)
 
 
@@ -91,15 +131,19 @@ class NamedStreamProvider(BaseStreamProvider):
     @classmethod
     def _streams(cls):
         super(NamedStreamProvider, cls)._streams()
-        return list(range(len(cls.stream_list)))
+        return list(range(len(cls._stream_list)))
 
     @classmethod
     def get_stream(cls, id):
-        return cls.stream_list[cls._number_id(id)]
+        """ Retrieve stream name based on id.
+        """
+        return cls._stream_list[cls._number_id(id)]
 
     @classmethod
     def get_id(cls, stream):
-        return cls.identifier + str(cls.stream_list.index(stream))
+        """ Get Id based on original stream name
+        """
+        return cls.identifier + str(cls._stream_list.index(stream))
 
 
 # ---------------------------------------------------------------------
@@ -207,7 +251,13 @@ class Providers(object):
         attr = {}
         if 'list' in mode:
             def fetch_function():
-                return [x[0] for x in strm.get_multiline_list('list')]
+                keys = strm.get_list('keys')
+                values = strm.get_multiline_list('list')
+                ret = OrderedDict([
+                    (v[0], dict(zip(keys, v)))
+                    for v in values
+                ])
+                return ret
         else:
             fetch = []
             url = None
@@ -226,16 +276,21 @@ class Providers(object):
                 name = join(join(dirname, 'providers_data'), strm['file'])
 
             def fetch_function():
-                return [x['id'] for x in loader.get_streams(name, url, parser, fetch)]
+                streams = loader.get_streams(name, url, parser, fetch)
+                return OrderedDict((x['id'], x) for x in streams)
 
         if 'lazy' in mode:
             attr['lazy_initialization'] = classmethod(lambda cls: fetch_function())
-            attr['stream_list'] = None
+            attr['_stream_list'] = None
+            attr['_stream_data'] = None
         else:
-            attr['stream_list'] = fetch_function()
+            stream_data = fetch_function()
+            attr['_stream_data'] = stream_data
+            attr['_stream_list'] = list(stream_data)
 
         conf = conf['base']
         attr.update(
+            name = cls_name,
             identifier = conf['identifier'],
             in_stream = conf['access'],
             thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
@@ -247,5 +302,17 @@ class Providers(object):
         )
 
         provider = type(str(cls_name), (cls_,), attr)
+        if sys.version_info < (3, 0):
+            # When configparser has an encoding set, all strings become
+            # unicode and Py2k do not accept them as class name.
+            cls_name = cls_name.encode('utf-8')
+
+        provider = type(cls_name, (cls_,), attr)
         cls._insert(provider, auto_enable)
+
+        if 'lazy' not in mode:
+            # Only chance to run this function if
+            # initialization is not lazy
+            provider.post_initialization()
+
         return provider
