@@ -246,6 +246,6 @@ class Providers(object):
             ),
         )
 
-        provider = type(cls_name, (cls_,), attr)
+        provider = type(str(cls_name), (cls_,), attr)
         cls._insert(provider, auto_enable)
         return provider
