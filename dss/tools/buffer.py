@@ -9,6 +9,10 @@
 from . import thread
 
 
+class SocketClosedError(Exception):
+    pass
+
+
 class _BaseBuffer(object):
 
     def __init__(self, size):
@@ -97,7 +101,7 @@ class Buffer(thread.LockedObject):
         self.buffer.set_size(value)
 
     @thread.lock_method
-    def read(self, amount):
+    def read(self, amount, raise_error=False):
         data = bytearray()
         while True:
             new_data = self.buffer.get(amount)
@@ -107,9 +111,13 @@ class Buffer(thread.LockedObject):
                 break
 
             self.buffer.set(None, fill_later=True)
-            read = self.socket.recv_into(self.buffer.view(), self.read_size)
-            if not read: 
-                break  # TODO RAISE ERROR???
-            self.buffer.set_fill(read)
+            try:
+                read = self.socket.recv_into(self.buffer.view(), self.read_size)
+                if not read:
+                    if raise_error:
+                        raise SocketClosedError('Missing %d bytes' % amount)
+                    break
+            finally:
+                self.buffer.set_fill(read)
 
         return data
