@@ -301,7 +301,6 @@ class Providers(object):
             ),
         )
 
-        provider = type(str(cls_name), (cls_,), attr)
         if sys.version_info < (3, 0):
             # When configparser has an encoding set, all strings become
             # unicode and Py2k do not accept them as class name.
