@@ -7,7 +7,6 @@ from .config import config, dirname
 from .tools import show
 from .web_handlers import stream_control, stream_stats, info
 
-
 STATIC_PATH = os.path.join(os.path.dirname(dirname), 'www', '')
 
 
@@ -26,9 +25,6 @@ class Server(object):
     tcp_retry = 10  # seconds
     daemon_threads = True
 
-    def __init__(self):
-        self._instance = tornado.ioloop.IOLoop.instance()
-
     def start(self):
         while True:
             try:
@@ -37,13 +33,6 @@ class Server(object):
                 show('Waiting TCP port to be used.')
                 time.sleep(self.tcp_retry)
             else:
-                show('Connected to %s:%s' % (self.host, self.port))
+                show('Listening at {0.host}:{0.port} (http)'.format(self))
                 break
-
-        self._instance.start()
-
-    def stop(self):
-        try:
-            self._instance.stop()
-        except Exception:
-            pass
+        return self

@@ -6,10 +6,16 @@ bin_default = config.get('ffmpeg', 'bin')
 probe = config.get('ffmpeg', 'probe')
 
 
-def _input_cmd(cmd_input, input, add_probe=True, bin=None):
+def _input_cmd(cmd_input, input, add_probe=True, bin=None, add_bin=True):
     """ Base of FFmpeg command with a single input.
     """
-    args = [bin_default if bin is None else bin]
+    if add_bin:
+        args = [bin_default if bin is None else bin]
+    else:
+        args = []
+    if cmd_input is None:
+        raise ValueError('Passing `None` on `cmd_input` will cause '
+                         'shlex.split to hang instead of raising error.')
     args += shlex.split(cmd_input)
     if add_probe:
         args += ['-probesize', probe]
@@ -21,6 +27,20 @@ def cmd(cmd_input, input, cmd_output, output, add_probe=True, bin=None):
     """ Build FFmpeg command for a single input and single output.
     """
     args = _input_cmd(cmd_input, input, add_probe, bin)
+    args += shlex.split(cmd_output)
+    args.append(output)
+    return args
+
+
+def cmd_inputs(cmd_input, inputs, cmd_output, output, add_probe=True, bin=None):
+    """ Build FFmpeg commando for multiple input files and a single output.
+    """
+    args = []
+    cmd_input_ = cmd_input
+    for ix, inp in enumerate(inputs):
+        if cmd_input is None:
+            cmd_input_, inp = inp
+        args += _input_cmd(cmd_input_, inp, add_probe, bin, add_bin=not ix)
     args += shlex.split(cmd_output)
     args.append(output)
     return args

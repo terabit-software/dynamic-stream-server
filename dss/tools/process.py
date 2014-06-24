@@ -1,4 +1,3 @@
-
 import sys
 import os
 from subprocess import *
@@ -24,10 +23,11 @@ def run_proc(id, cmd, mode):
 
 
 if sys.version_info < (3, 2):
+    _Popen = Popen
 
     # Add context manager support for Popen class
     # on older Python versions
-    class Popen(Popen):
+    class Popen(_Popen):
         def __enter__(self):
             return self
 
