@@ -8,6 +8,7 @@ import shutil
 import random
 import queue
 import makeobj
+
 try:
     import socketserver
 except ImportError:
@@ -17,7 +18,7 @@ try:
 except ImportError:
     fcntl = None
 
-from .tools import buffer, thread, process
+from .tools import buffer, thread, process, ffmpeg, show
 from .config import config
 
 rtmpconf = config['rtmp-server']
@@ -164,10 +165,11 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.audio = Media(audio_pipe).start()
         self.video = Media(video_pipe).start()
 
-        # TODO use .tools.ffmpeg module -- add function for multiple inputs
-        args = ['ffmpeg', '-re', '-probesize', '4k', '-y', '-i', audio_filename,
-                '-re', '-probesize', '4k', '-i', video_filename, '-c:v', 'copy',
-                '-c:a', 'libfdk_aac', '-b:a', '64k', '-f', 'flv', self.destination_url]
+        args = ffmpeg.cmd_inputs(
+            '-y -re', [audio_filename, video_filename],
+            '-c:v copy -c:a libfdk_aac -b:a 64k -f flv',
+            self.destination_url
+        )
 
         with self.file('proc_output', 'w') as out:
             with self.file('proc_err', 'w') as err:
@@ -226,34 +228,43 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
     def _get_random_name(self):
         # TODO change this
-        return 'stream.' + str(random.randint(1, 1000000))
+        return 'stream' + str(random.randint(1, 1000000))
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
 
 
-def start_server_thread():
-    thread.Thread(run_server).start()
+class TCPServer(object):
 
+    def __init__(self):
+        self.host = config.get('local', 'addr')
+        self.port = config.getint('local', 'tcp_port')
+        self.cond = thread.Condition()
+        self._server = None
 
-def run_server():
-    global server
-    HOST, PORT = "0.0.0.0", 9995
+    def start(self):
+        with self.cond:
+            thread.Thread(self.run_server).start()
+            self.cond.wait()
+        return self
 
-    server = ThreadedTCPServer((HOST, PORT), MediaHandler)
-    ip, port = server.server_address
-    print("Listening at {}:{} ".format(ip, port))
+    def run_server(self):
+        self._server = ThreadedTCPServer((self.host, self.port), MediaHandler)
+        #server = TCPServer()
+        #ip, port = server.server_address
+        #server.listen(PORT, HOST)
+        #server.start(0)
+        show('Listening at {0.host}:{0.port} (tcp)'.format(self))
+        with self.cond:
+            self.cond.notify_all()
+        self._server.serve_forever()
 
-    server.serve_forever()
-
-server = None
-
-
-def stop_server():
-    server.shutdown()
-    print('Mobile server stopped')
+    def stop(self):
+        self._server.shutdown()
+        print('Mobile server stopped')
 
 
 if __name__ == "__main__":
-    run_server()
+    server = TCPServer()
+    server.start()
