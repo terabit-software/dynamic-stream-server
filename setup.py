@@ -13,6 +13,7 @@ install_requires = [
     'tornado',
     'setuptools',
     'makeobj',
+    'pymongo',
 ]
 
 if py_version < (3, 2):
