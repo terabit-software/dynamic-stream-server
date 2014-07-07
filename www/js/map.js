@@ -4,9 +4,10 @@ var marker;
 var map;
 
 function initialize(pinPoints) {
+  console.log('intialize map');  
   var myOptions = {
-    center: new google.maps.LatLng(-22.934365, -43.329048),
-    zoom: 11,
+    center: new google.maps.LatLng(-22.932933, -43.200397),
+    zoom: 13,
     mapTypeId: google.maps.MapTypeId.ROADMAP
   };
   map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
