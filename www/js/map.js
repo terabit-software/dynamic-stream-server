@@ -25,12 +25,18 @@ function insertPinPoint(myLatlng, item, map, label, icon){
     icon : icon
   });
 
-  google.maps.event.addListener(marker, 'click', function() {
-    window.location=buildVideoUrl(item);
-  });
-    
+  insertVideoWindow(marker, item);
   insertCaption(marker, label, item);
   markersArray.push(marker);
+}
+
+function insertVideoWindow(marker, item) {
+    google.maps.event.addListener(marker, 'click', function() {
+        $.fancybox.open({
+            href : buildVideoUrl(item),
+            type : 'iframe'
+        });
+    });
 }
 
 function buildVideoUrl(cam_id){
