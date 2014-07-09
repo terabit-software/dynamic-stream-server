@@ -1,40 +1,51 @@
-var devices = ['nokia','iphone','ipod','ipad','blackberry','x11','android','android 1.5'];
+var devices = ['nokia', 'iphone', 'ipod', 'ipad', 'blackberry',
+               'x11', 'android', 'android 1.5'];
 var markersArray = [];
 var marker;
 var map;
 
 function initialize(pinPoints) {
-  console.log('intialize map');  
-  var myOptions = {
-    center: new google.maps.LatLng(-22.932933, -43.200397),
-    zoom: 13,
-    mapTypeId: google.maps.MapTypeId.ROADMAP
-  };
-  map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-  var trafficLayer = new google.maps.TrafficLayer();
-  trafficLayer.setMap(map);
-  pinPoints(map);
+    console.log('intialize map');
+    var myOptions = {
+        center: new google.maps.LatLng(-22.932933, -43.200397),
+        zoom: 13,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+    var trafficLayer = new google.maps.TrafficLayer();
+    trafficLayer.setMap(map);
+    pinPoints(map);
 }
 
 //insere o maker e configura as funções do click
 function insertPinPoint(myLatlng, item, map, label, icon){
-  marker = new google.maps.Marker({
-    position: myLatlng,
-    map: map,
-    flat: true,
-    icon : icon
-  });
+    marker = new google.maps.Marker({
+        position: myLatlng,
+        map: map,
+        flat: true,
+        icon : icon
+    });
 
-  insertVideoWindow(marker, item);
-  insertCaption(marker, label, item);
-  markersArray.push(marker);
+    insertVideoWindow(marker, item);
+    insertCaption(marker, label, item);
+    markersArray.push(marker);
 }
 
 function insertVideoWindow(marker, item) {
     google.maps.event.addListener(marker, 'click', function() {
         $.fancybox.open({
-            href : buildVideoUrl(item),
-            type : 'iframe'
+            href: buildVideoUrl(item),
+            padding: 0,
+            autoScale: false,
+            autoSize: false,
+            autoDimensions: false,
+            fitToView: false,
+            transitionIn: 'none',
+            transitionOut: 'none',
+            title: this.title,
+            width: 870,
+            height: 496,
+            type: 'iframe'
         });
     });
 }
@@ -51,10 +62,10 @@ function buildVideoUrl(cam_id){
     case 2:
     case 3:
     case 6: // Android
-        url='/hls/'+cam_id+'/index.m3u8';
+        url = '/hls/' + cam_id + '/index.m3u8';
         break;
-    case 4: // blackberry
-        document.write("Blackberry is not supported");
+    case 4: // Blackberry
+        document.write('Blackberry is not supported');
         break;
     case 5: // Linux (flash)
         break;
@@ -69,13 +80,13 @@ function buildVideoUrl(cam_id){
 }
 
 function userAgentDetect(userAg){ 
-  for(var i = 0; i < devices.length; i++) {
-    if (userAg.search(devices[i]) > 0) {
-      //document.write('User agent found: '+i);
-      return i;
+    for(var i = 0; i < devices.length; i++) {
+        if (userAg.search(devices[i]) > 0) {
+            console.log('User agent found: ' + i);
+            return i;
+        }
     }
-  }
-  return -1;
+    return -1;
 }
 
 function htmlContent(label, cam_id){
