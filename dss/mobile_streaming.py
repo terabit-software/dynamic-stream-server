@@ -7,7 +7,9 @@ import tempfile
 import shutil
 import random
 import queue
+import datetime
 import makeobj
+#import tornado.tcpserver
 
 try:
     import socketserver
@@ -20,6 +22,7 @@ except ImportError:
 
 from .tools import buffer, thread, process, ffmpeg, show
 from .config import config
+from .storage import db
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
@@ -87,6 +90,7 @@ class Media(thread.Thread):
 
 
 class MediaHandler(socketserver.BaseRequestHandler, object):
+#class TCPServer(tornado.tcpserver.TCPServer):
     """  Packet header description
 
         The packet header will provide the type of payload data, and the size.
@@ -148,6 +152,11 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             except Exception as e:
                 print('Exception while cleaning:', repr(e))
 
+    #def handle_stream(self, stream, address):
+    #    print(stream)
+    #    print(address)
+    #    print('Fin')
+
     def handle_loop(self):
         audio_filename = self.file('audio.aac')
         video_filename = self.file('video.ts')
@@ -204,7 +213,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         elif type is DataContent.audio:
             self.audio.add_data(payload)
         else:
-            print(json.loads(payload.decode()))
+            data = json.loads(payload.decode())
+            obj = {'time': datetime.datetime.utcnow(),
+                   'coord': [data['latitude'], data['longitude']]}
+            print(obj)
 
     def process_header(self, data):
         """ Strips out the header
@@ -230,6 +242,8 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         # TODO change this
         return 'stream' + str(random.randint(1, 1000000))
 
+
+#MediaHandler = TCPServer  # TODO XXX???
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
