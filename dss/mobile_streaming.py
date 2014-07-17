@@ -82,7 +82,6 @@ class Media(thread.Thread):
         self.queue.put(None)
         self.join()
         os.close(self.pipe)
-        print('Thread {0!r} has ended'.format(self.name))  # TODO: Remove this
 
     def add_data(self, data):
         self.queue.put(data)
@@ -276,7 +275,6 @@ class TCPServer(object):
 
     def stop(self):
         self._server.shutdown()
-        print('Mobile server stopped')
 
 
 if __name__ == "__main__":
