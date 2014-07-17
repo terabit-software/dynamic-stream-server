@@ -1,3 +1,4 @@
+#! coding: utf-8
 import sys
 try:
     from setuptools import setup
@@ -33,7 +34,7 @@ setup(
     version = '0.1',
     description = 'Dynamic video streaming system',
     author = [
-        'Joao Bernardo Oliveira',
+        'João Bernardo Oliveira',
         'Nelson Perez',
     ],
     author_email = 'jbvsmo@gmail.com',
