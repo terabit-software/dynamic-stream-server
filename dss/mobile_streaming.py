@@ -5,11 +5,9 @@ import json
 import struct
 import tempfile
 import shutil
-import random
 import queue
 import datetime
 import makeobj
-#import tornado.tcpserver
 
 try:
     import socketserver
@@ -89,7 +87,6 @@ class Media(thread.Thread):
 
 
 class MediaHandler(socketserver.BaseRequestHandler, object):
-#class TCPServer(tornado.tcpserver.TCPServer):
     """  Packet header description
 
         The packet header will provide the type of payload data, and the size.
@@ -150,11 +147,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
                 self.cleanup()
             except Exception as e:
                 print('Exception while cleaning:', repr(e))
-
-    #def handle_stream(self, stream, address):
-    #    print(stream)
-    #    print(address)
-    #    print('Fin')
 
     def handle_loop(self):
         audio_filename = self.file('audio.aac')
@@ -264,10 +256,6 @@ class TCPServer(object):
 
     def run_server(self):
         self._server = ThreadedTCPServer((self.host, self.port), MediaHandler)
-        #server = TCPServer()
-        #ip, port = server.server_address
-        #server.listen(PORT, HOST)
-        #server.start(0)
         show('Listening at {0.host}:{0.port} (tcp)'.format(self))
         with self.cond:
             self.cond.notify_all()
