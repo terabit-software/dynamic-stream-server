@@ -74,10 +74,13 @@ function userAgentDetect(userAg){
 function htmlContent(label, cam_id){
     var time = Date.now();
     var base = 5 * 60 * 1000;  // 5 minutes cache
+    var img_error = "'img_error.png'"
     time = base * Math.round(time / base);
 
+
     return '<img src="/thumb/' + cam_id + '.jpg?' + time + '" ' +
-           'width="320" height="240" alt="Image not available"></img>'+
+           'width="320" height="240" ' +
+           'onerror="this.src =' + img_error + '"></img>'+
            '<br>Camera ' + cam_id + '<br />' + label + '<br />';
 }
 
