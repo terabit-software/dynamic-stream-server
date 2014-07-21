@@ -5,8 +5,8 @@ import json
 import struct
 import tempfile
 import shutil
-import random
 import queue
+import datetime
 import makeobj
 
 try:
@@ -20,6 +20,7 @@ except ImportError:
 
 from .tools import buffer, thread, process, ffmpeg, show
 from .config import config
+from .storage import db
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
@@ -79,7 +80,6 @@ class Media(thread.Thread):
         self.queue.put(None)
         self.join()
         os.close(self.pipe)
-        print('Thread {0!r} has ended'.format(self.name))  # TODO: Remove this
 
     def add_data(self, data):
         self.queue.put(data)
@@ -101,7 +101,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         Metadata, Video, Audio and User generated data.
     """
 
+    provider_prefix = 'M'
+
     def __init__(self, *args, **kw):
+        self._id = None
         self.run = True
         self.buffer = None
         self.proc = None
@@ -109,8 +112,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.audio = None
         self.tmpdir = tempfile.mkdtemp()
         self.__cleanup_executed = False
-        self.destination_url = os.path.join(rtmpconf['addr'], rtmpconf['app'], self._get_random_name())
-        print('Publish point:', self.destination_url)
+        self.destination_url = None
 
         super(MediaHandler, self).__init__(*args, **kw)
 
@@ -134,12 +136,20 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.video.stop()
 
         shutil.rmtree(self.tmpdir)
+        db.mobile.update({'_id': self._id}, {'active': False})
         self.__cleanup_executed = True
+        show('Mobile stream "{0}" has ended'.format(self._id))
 
     #__del__ = cleanup  # TODO Is this required?
 
     def handle(self):
         self.buffer = buffer.Buffer(self.request)
+        self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
+                                     'active': True})
+        self.destination_url = os.path.join(
+            rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
+        )
+        show('New mobile stream:', self.destination_url)
         try:
             self.handle_loop()
         finally:
@@ -204,7 +214,12 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         elif type is DataContent.audio:
             self.audio.add_data(payload)
         else:
-            print(json.loads(payload.decode()))
+            # TODO make this operation async
+            data = json.loads(payload.decode())
+            obj = {'time': datetime.datetime.utcnow(),
+                   'coord': [data['latitude'], data['longitude']]}
+            db.mobile.update({'_id': self._id}, {'$push': {'position': obj}})
+            show('Stream: {0} | {1} | {2}'.format(self._id, obj['time'], obj['coord']))
 
     def process_header(self, data):
         """ Strips out the header
@@ -226,9 +241,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             return None, None
         return typ, payload
 
-    def _get_random_name(self):
+    def _get_stream_name(self):
         # TODO change this
-        return 'stream' + str(random.randint(1, 1000000))
+        return self.provider_prefix + '-' + str(self._id)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -251,10 +266,6 @@ class TCPServer(object):
 
     def run_server(self):
         self._server = ThreadedTCPServer((self.host, self.port), MediaHandler)
-        #server = TCPServer()
-        #ip, port = server.server_address
-        #server.listen(PORT, HOST)
-        #server.start(0)
         show('Listening at {0.host}:{0.port} (tcp)'.format(self))
         with self.cond:
             self.cond.notify_all()
@@ -262,7 +273,6 @@ class TCPServer(object):
 
     def stop(self):
         self._server.shutdown()
-        print('Mobile server stopped')
 
 
 if __name__ == "__main__":
