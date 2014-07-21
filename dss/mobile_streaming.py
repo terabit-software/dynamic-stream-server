@@ -101,7 +101,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         Metadata, Video, Audio and User generated data.
     """
 
+    provider_prefix = 'M'
+
     def __init__(self, *args, **kw):
+        self._id = None
         self.run = True
         self.buffer = None
         self.proc = None
@@ -109,8 +112,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.audio = None
         self.tmpdir = tempfile.mkdtemp()
         self.__cleanup_executed = False
-        self.destination_url = os.path.join(rtmpconf['addr'], rtmpconf['app'], self._get_random_name())
-        print('Publish point:', self.destination_url)
+        self.destination_url = None
 
         super(MediaHandler, self).__init__(*args, **kw)
 
@@ -134,12 +136,20 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.video.stop()
 
         shutil.rmtree(self.tmpdir)
+        db.mobile.update({'_id': self._id}, {'active': False})
         self.__cleanup_executed = True
+        show('Mobile stream "{0}" has ended'.format(self._id))
 
     #__del__ = cleanup  # TODO Is this required?
 
     def handle(self):
         self.buffer = buffer.Buffer(self.request)
+        self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
+                                     'active': True})
+        self.destination_url = os.path.join(
+            rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
+        )
+        show('New mobile stream:', self.destination_url)
         try:
             self.handle_loop()
         finally:
@@ -204,10 +214,12 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         elif type is DataContent.audio:
             self.audio.add_data(payload)
         else:
+            # TODO make this operation async
             data = json.loads(payload.decode())
             obj = {'time': datetime.datetime.utcnow(),
                    'coord': [data['latitude'], data['longitude']]}
-            print(obj)
+            db.mobile.update({'_id': self._id}, {'$push': {'position': obj}})
+            show('Stream: {0} | {1} | {2}'.format(self._id, obj['time'], obj['coord']))
 
     def process_header(self, data):
         """ Strips out the header
@@ -229,12 +241,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             return None, None
         return typ, payload
 
-    def _get_random_name(self):
+    def _get_stream_name(self):
         # TODO change this
-        return 'stream' + str(random.randint(1, 1000000))
+        return self.provider_prefix + '-' + str(self._id)
 
-
-#MediaHandler = TCPServer  # TODO XXX???
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True

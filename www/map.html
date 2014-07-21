@@ -31,10 +31,14 @@
             });
         }
 
+        $(document).ready(function(){
+            initialize(pinPoints);
+            mobileStreamPinPoints();
+        });
     </script>
     <title>Stream Map</title>
 </head>
-<body onLoad="initialize(pinPoints)">
+<body>
     <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
 </html>

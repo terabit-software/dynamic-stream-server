@@ -98,3 +98,31 @@ function insertCaption(marker, label, cam_id) {
     });
 }
 
+function mobileStreamPinPoints() {
+    var ws = new WebSocket('ws://' + location.host + '/mobile/location');
+    var markers = []; // TODO Add here
+
+    ws.onopen = function () {
+        ws.send("Hello, world");
+    };
+
+    ws.onmessage = function (evt) {
+        //console.log(evt.data);
+        var data = JSON.parse(evt.data);
+        if (data.request == 'all') {
+            $(data.content).each(function (i, x) {
+                var pos = x.position.slice(-1)[0].coord;
+                console.log(pos);
+                marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(pos[0], pos[1]),
+                    map: map,
+                    flat: true,
+                    icon: 'mobile.png'
+                });
+            });
+        }
+        else if (data.request == 'update'){
+
+        }
+    };
+}
