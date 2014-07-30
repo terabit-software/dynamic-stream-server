@@ -8,6 +8,7 @@ import shutil
 import queue
 import datetime
 import makeobj
+import time
 
 try:
     import socketserver
@@ -56,20 +57,27 @@ def set_pipe_max_size(*pipes):
 class Media(thread.Thread):
     timeout = 10
 
-    def __init__(self, pipe, name=None):
+    def __init__(self, pipe, parent, name=None):
         super(Media, self).__init__(name=name)
         self.pipe = pipe
+        self.parent = parent
         self.count = 0
         self._run = True
         self.queue = queue.Queue()
         self.lock = thread.Lock()
+        self.daemon = False
 
     def run(self):
         while True:
             with self.lock:
                 if not self._run:
                     break
-            data = self.queue.get(timeout=self.timeout)
+            try:
+                data = self.queue.get(timeout=self.timeout)
+            except queue.Empty as e:
+                show('Empty queue:', self.name)
+                self.parent.error = e
+                raise
             if data is None:
                 break
             os.write(self.pipe, data)
@@ -84,6 +92,43 @@ class Media(thread.Thread):
     def add_data(self, data):
         self.queue.put(data)
         self.count += 1
+
+
+class DataProc(thread.Thread):
+    def __init__(self, parent):
+        super(DataProc, self).__init__()
+        self.parent = parent
+        self.queue = parent.data_queue
+        self.latest_position = None
+
+    def run(self):
+        while True:
+            data = self.queue.get()
+            if data is None:
+                # TODO Maybe run some cleanup here
+                break
+            type, payload = data
+            data = json.loads(payload.decode())
+
+            if type is DataContent.userdata:
+                # TODO Handle contents other than GPS too
+                obj = {'time': datetime.datetime.utcnow(),
+                       'coord': [data['latitude'], data['longitude']]}
+                self.latest_position = obj
+                db.mobile.update({'_id': self.parent._id},
+                                 {'$push': {'position': obj}})
+                show('Stream: {0} | {1} | {2}'.format(
+                    self.parent._id, obj['time'], obj['coord'])
+                )
+
+            elif type is DataContent.metadata:
+                # TODO Handle metadata
+                show('Metadata:', repr(payload))
+
+    def stop(self):
+        self.queue.empty()
+        self.queue.put(None)
+        self.join()
 
 
 class MediaHandler(socketserver.BaseRequestHandler, object):
@@ -102,19 +147,43 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     """
 
     provider_prefix = 'M'
+    _handlers = set()
+    _handlers_lock = thread.Lock()
 
-    def __init__(self, *args, **kw):
+    def setup(self):
         self._id = None
         self.run = True
         self.buffer = None
         self.proc = None
         self.video = None
         self.audio = None
-        self.tmpdir = tempfile.mkdtemp()
-        self.__cleanup_executed = False
         self.destination_url = None
+        self.data_processing = None
+        self.data_queue = queue.Queue()
+        self.tmpdir = tempfile.mkdtemp()
+        self._error = []
+        self.__cleanup_executed = False
 
-        super(MediaHandler, self).__init__(*args, **kw)
+    def add_handler(self):
+        with self._handlers_lock:
+            self._handlers.add(self)
+
+    def remove_handler(self):
+        with self._handlers_lock:
+            self._handlers.remove(self)
+
+    @property
+    def error(self):
+        return self._error
+
+    @error.setter
+    def error(self, value):
+        self._error.append(value)
+
+    @classmethod
+    def wait_handlers(cls):
+        while cls._handlers:
+            time.sleep(0.1)
 
     def file(self, name, open_options=None):
         """ Return the name of a file in the temp dir.
@@ -132,17 +201,28 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         """
         if self.__cleanup_executed:
             return
+
         self.audio.stop()
         self.video.stop()
+        self.data_processing.stop()
 
+        db.mobile.update({'_id': self._id}, {'$set': {'active': False}})
         shutil.rmtree(self.tmpdir)
-        db.mobile.update({'_id': self._id}, {'active': False})
         self.__cleanup_executed = True
         show('Mobile stream "{0}" has ended'.format(self._id))
 
-    #__del__ = cleanup  # TODO Is this required?
+    def finish(self):
+        try:
+            self.cleanup()
+        except Exception as e:
+            show('Exception while cleaning:', repr(e))
+        finally:
+            self.remove_handler()
+
+    #__del__ = finish  # TODO Is this required?
 
     def handle(self):
+        self.add_handler()
         self.buffer = buffer.Buffer(self.request)
         self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
                                      'active': True})
@@ -150,15 +230,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
         )
         show('New mobile stream:', self.destination_url)
-        try:
-            self.handle_loop()
-        finally:
-            try:
-                self.cleanup()
-            except Exception as e:
-                print('Exception while cleaning:', repr(e))
 
-    def handle_loop(self):
         audio_filename = self.file('audio.aac')
         video_filename = self.file('video.ts')
         try:
@@ -172,8 +244,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         video_pipe = os.open(video_filename, os.O_RDWR)
         set_pipe_max_size(audio_pipe, video_pipe)
 
-        self.audio = Media(audio_pipe).start()
-        self.video = Media(video_pipe).start()
+        self.audio = Media(audio_pipe, self, 'audio').start()
+        self.video = Media(video_pipe, self, 'video').start()
+        self.data_processing = DataProc(self).start()
 
         args = ffmpeg.cmd_inputs(
             '-y -re', [audio_filename, video_filename],
@@ -190,16 +263,17 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             until the client stops sending data.
         """
         with process.Popen(proc_args, stdout=stdout, stderr=stderr) as self.proc:
-            while True:
+            while self.server.is_running and not self.error:
                 type, payload = self.read_data()
                 if not self.run or type is None:
                     break
                 self.handle_content(type, payload)
+
             try:
                 self.proc.kill()
                 self.proc.wait()
             except Exception as e:
-                print('Proc exit:', repr(e))
+                show('Proc exit error:', repr(e))
 
     def handle_content(self, type, payload):
         try:
@@ -207,19 +281,15 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         except KeyError:
             print('Invalid header type "%s"' % type)
 
-        if type is DataContent.metadata:
-            print('Meta:', repr(payload))
+        if type in (DataContent.metadata, DataContent.userdata):
+            self.data_queue.put((type, payload))
         elif type is DataContent.video:
             self.video.add_data(payload)
         elif type is DataContent.audio:
             self.audio.add_data(payload)
         else:
-            # TODO make this operation async
-            data = json.loads(payload.decode())
-            obj = {'time': datetime.datetime.utcnow(),
-                   'coord': [data['latitude'], data['longitude']]}
-            db.mobile.update({'_id': self._id}, {'$push': {'position': obj}})
-            show('Stream: {0} | {1} | {2}'.format(self._id, obj['time'], obj['coord']))
+            show('Unknown content received: ' +
+                 'Type: {0}, Payload: {1!r}'.format(type, payload))
 
     def process_header(self, data):
         """ Strips out the header
@@ -242,12 +312,13 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         return typ, payload
 
     def _get_stream_name(self):
-        # TODO change this
+        # TODO change this | Already changed? remove message only?
         return self.provider_prefix + '-' + str(self._id)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
+    is_running = False
 
 
 class TCPServer(object):
@@ -269,9 +340,11 @@ class TCPServer(object):
         show('Listening at {0.host}:{0.port} (tcp)'.format(self))
         with self.cond:
             self.cond.notify_all()
+        self._server.is_running = True
         self._server.serve_forever()
 
     def stop(self):
+        self._server.is_running = False
         self._server.shutdown()
 
 

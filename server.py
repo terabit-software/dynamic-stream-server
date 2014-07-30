@@ -4,7 +4,7 @@ from dss.thumbnail import Thumbnail
 from dss.web import Server
 from dss.tools import show_close
 from dss.tornado_setup import TornadoManager
-from dss.mobile_streaming import TCPServer
+from dss.mobile_streaming import TCPServer, MediaHandler
 
 
 def main():
@@ -26,6 +26,7 @@ def main():
     show_close(Video.terminate_streams, 'Stopping streams')
     show_close(Thumbnail.stop_download, 'Stopping thumbnail download')
     show_close(tcp_server.stop, 'Stopping TCP Server')
+    show_close(MediaHandler.wait_handlers, 'Closing remaining TCP connections')
 
 
 if __name__ == '__main__':
