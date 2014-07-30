@@ -33,14 +33,21 @@ def cmd(cmd_input, input, cmd_output, output, add_probe=True, bin=None):
 
 
 def cmd_inputs(cmd_input, inputs, cmd_output, output, add_probe=True, bin=None):
-    """ Build FFmpeg commando for multiple input files and a single output.
+    """ Build FFmpeg command for multiple input files and a single output.
+        If an item on the `input` list is a 2-item tuple, it will be unpacked into
+        input command for this input and the input.
+        E.g.: ['audio_file.mp4', ('-f mpegts', 'video_stream')]
     """
     args = []
     cmd_input_ = cmd_input
     for ix, inp in enumerate(inputs):
         if cmd_input is None:
             cmd_input_, inp = inp
+        if isinstance(inp, tuple):
+            cmd_input_ += ' ' + inp[0]
+            inp = inp[1]
         args += _input_cmd(cmd_input_, inp, add_probe, bin, add_bin=not ix)
+        cmd_input_ = cmd_input
     args += shlex.split(cmd_output)
     args.append(output)
     return args
