@@ -350,4 +350,8 @@ class TCPServer(object):
 
 if __name__ == "__main__":
     server = TCPServer()
-    server.start()
+    try:
+        server.start()
+    except KeyboardInterrupt:
+        server.stop()
+        MediaHandler.wait_handlers()
