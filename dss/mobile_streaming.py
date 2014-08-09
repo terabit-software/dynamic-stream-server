@@ -76,6 +76,7 @@ class Media(thread.Thread):
                 data = self.queue.get(timeout=self.timeout)
             except queue.Empty as e:
                 show('Empty queue:', self.name)
+                self.parent.handle_low_bandwidth_error()
                 self.parent.error = e
                 raise
             if data is None:
@@ -157,6 +158,8 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.proc = None
         self.video = None
         self.audio = None
+        self.video_pipe = None
+        self.audio_pipe = None
         self.destination_url = None
         self.data_processing = None
         self.data_queue = queue.Queue()
@@ -240,12 +243,12 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             print('Failed to create FIFO:', e)
             return
 
-        audio_pipe = os.open(audio_filename, os.O_RDWR)
-        video_pipe = os.open(video_filename, os.O_RDWR)
-        set_pipe_max_size(audio_pipe, video_pipe)
+        self.audio_pipe = os.open(audio_filename, os.O_RDWR)
+        self.video_pipe = os.open(video_filename, os.O_RDWR)
+        set_pipe_max_size(self.audio_pipe, self.video_pipe)
 
-        self.audio = Media(audio_pipe, self, 'audio').start()
-        self.video = Media(video_pipe, self, 'video').start()
+        self.audio = Media(self.audio_pipe, self, 'audio').start()
+        self.video = Media(self.video_pipe, self, 'video').start()
         self.data_processing = DataProc(self).start()
 
         args = ffmpeg.cmd_inputs(
@@ -315,6 +318,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         # TODO change this | Already changed? remove message only?
         return self.provider_prefix + '-' + str(self._id)
 
+    def handle_low_bandwidth_error(self):
+        print('handle_low_bandwidth_error')
+        d = os.read(self.video_pipe, 2*PIPE_SIZE)
+        print('Read a total of '+str(len(d))+' bytes from pipe')
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
