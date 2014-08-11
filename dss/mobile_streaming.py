@@ -26,6 +26,8 @@ from .storage import db
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
 PIPE_SIZE = None
+DEFAULT_PIPE_SIZE = 1024 * 1024
+WAIT_TIMEOUT = 2
 
 
 class DataContent(makeobj.Obj):
@@ -55,7 +57,7 @@ def set_pipe_max_size(*pipes):
 
 
 class Media(thread.Thread):
-    timeout = 10
+    timeout = WAIT_TIMEOUT
 
     def __init__(self, pipe, parent, name=None):
         super(Media, self).__init__(name=name)
@@ -65,6 +67,7 @@ class Media(thread.Thread):
         self._run = True
         self.queue = queue.Queue()
         self.lock = thread.Lock()
+        self.write_lock = thread.Lock()
         self.daemon = False
 
     def run(self):
@@ -75,17 +78,19 @@ class Media(thread.Thread):
             try:
                 data = self.queue.get(timeout=self.timeout)
             except queue.Empty as e:
-                show('Empty queue:', self.name)
-                self.parent.handle_low_bandwidth_error()
                 self.parent.error = e
-                raise
+                show('Low Bandwidth:', self.name)
+                return
             if data is None:
                 break
-            os.write(self.pipe, data)
+
+            with self.write_lock:
+                os.write(self.pipe, data)
 
     def stop(self):
         with self.lock:
             self._run = False
+        self.release_pipe()
         self.queue.put(None)
         self.join()
         os.close(self.pipe)
@@ -93,6 +98,18 @@ class Media(thread.Thread):
     def add_data(self, data):
         self.queue.put(data)
         self.count += 1
+
+    def release_pipe(self):
+        if self.write_lock.acquire(blocking=False):
+            # If acquiring is possible, the pipe is not blocked
+            show('No data read from {0!r} pipe'.format(self.name))
+            self.write_lock.release()
+            return
+
+        self.queue.empty()
+        # TODO While loop to keep reading if it is still blocked!!!
+        d = os.read(self.pipe, (PIPE_SIZE or DEFAULT_PIPE_SIZE) * 10)
+        show('Read a total of {0} bytes from {1!r} pipe'.format(len(d), self.name))
 
 
 class DataProc(thread.Thread):
@@ -158,8 +175,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.proc = None
         self.video = None
         self.audio = None
-        self.video_pipe = None
-        self.audio_pipe = None
         self.destination_url = None
         self.data_processing = None
         self.data_queue = queue.Queue()
@@ -225,6 +240,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     #__del__ = finish  # TODO Is this required?
 
     def handle(self):
+        self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
         self.buffer = buffer.Buffer(self.request)
         self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
@@ -243,12 +259,12 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             print('Failed to create FIFO:', e)
             return
 
-        self.audio_pipe = os.open(audio_filename, os.O_RDWR)
-        self.video_pipe = os.open(video_filename, os.O_RDWR)
-        set_pipe_max_size(self.audio_pipe, self.video_pipe)
+        audio_pipe = os.open(audio_filename, os.O_RDWR)
+        video_pipe = os.open(video_filename, os.O_RDWR)
+        set_pipe_max_size(audio_pipe, video_pipe)
 
-        self.audio = Media(self.audio_pipe, self, 'audio').start()
-        self.video = Media(self.video_pipe, self, 'video').start()
+        self.audio = Media(audio_pipe, self, 'audio').start()
+        self.video = Media(video_pipe, self, 'video').start()
         self.data_processing = DataProc(self).start()
 
         args = ffmpeg.cmd_inputs(
@@ -266,8 +282,15 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             until the client stops sending data.
         """
         with process.Popen(proc_args, stdout=stdout, stderr=stderr) as self.proc:
-            while self.server.is_running and not self.error:
-                type, payload = self.read_data()
+            while self.server.is_running \
+                    and not self.error \
+                    and self.proc.poll() is None:
+                try:
+                    type, payload = self.read_data()
+                except Exception:
+                    show('Timeout')
+                    break
+
                 if not self.run or type is None:
                     break
                 self.handle_content(type, payload)
@@ -318,10 +341,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         # TODO change this | Already changed? remove message only?
         return self.provider_prefix + '-' + str(self._id)
 
-    def handle_low_bandwidth_error(self):
-        print('handle_low_bandwidth_error')
-        d = os.read(self.video_pipe, 2*PIPE_SIZE)
-        print('Read a total of '+str(len(d))+' bytes from pipe')
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
