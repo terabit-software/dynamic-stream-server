@@ -96,6 +96,7 @@ class Media(thread.Thread):
     def stop(self):
         with self.lock:
             self._run = False
+        self.queue.empty()
         self.release_pipe()
         self.queue.put(None)
         self.join()
@@ -105,16 +106,20 @@ class Media(thread.Thread):
         self.queue.put(data)
 
     def release_pipe(self):
-        if self.write_lock.acquire(blocking=False):
-            # If acquiring is possible, the pipe is not blocked
-            show('No data read from {0!r} pipe'.format(self.name))
+        # Set the pipe non blocking for reading
+        fcntl.fcntl(self.pipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        read_size = 0
+        while not self.write_lock.acquire(blocking=False):
+            # If acquiring is not possible, the pipe is still blocked
+            try:
+                read = os.read(self.pipe, PIPE_SIZE or DEFAULT_PIPE_SIZE)
+                read_size += len(read)
+            except IOError:
+                break
+        else:
             self.write_lock.release()
-            return
-
-        self.queue.empty()
-        # TODO While loop to keep reading if it is still blocked!!!
-        d = os.read(self.pipe, (PIPE_SIZE or DEFAULT_PIPE_SIZE) * 10)
-        show('Read a total of {0} bytes from {1!r} pipe'.format(len(d), self.name))
+        show('Read {0} bytes from {1!r} pipe'.format(read_size, self.name))
+        return read_size
 
 
 class DataProc(thread.Thread):
