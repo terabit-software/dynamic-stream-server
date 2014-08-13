@@ -147,6 +147,13 @@ class DataProc(thread.Thread):
         self.latest_position = None
 
     def run(self):
+        try:
+            self.handle_data()
+        except BaseException as e:
+            self.parent.error = e
+            show('Data processing error:', repr(e))
+
+    def handle_data(self):
         while True:
             data = self.queue.get()
             if data is None:
@@ -154,21 +161,29 @@ class DataProc(thread.Thread):
                 break
             type, payload = data
             data = json.loads(payload.decode())
+            content = data['content']
+            action = data['type']
 
             if type is DataContent.userdata:
-                # TODO Handle contents other than GPS too
-                obj = {'time': datetime.datetime.utcnow(),
-                       'coord': [data['latitude'], data['longitude']]}
-                self.latest_position = obj
-                db.mobile.update({'_id': self.parent._id},
-                                 {'$push': {'position': obj}})
-                show('Stream: {0} | {1} | {2}'.format(
-                    self.parent._id, obj['time'], obj['coord'])
-                )
+                fn = getattr(self, '_handle_' + action, None)
+                if fn is None:
+                    show('Warning: action not found for user content of type', repr(action))
+                else:
+                    fn(content)
 
             elif type is DataContent.metadata:
                 # TODO Handle metadata
-                show('Metadata:', repr(payload))
+                show('Metadata:', repr(data))
+
+    def _handle_coord(self, data):
+        obj = {'time': datetime.datetime.utcnow(),
+               'coord': [data['latitude'], data['longitude']]}
+        self.latest_position = obj
+        db.mobile.update({'_id': self.parent._id},
+                         {'$push': {'position': obj}})
+        show('Stream: {0} | {1} | {2}'.format(
+            self.parent._id, obj['time'], obj['coord'])
+        )
 
     def stop(self):
         self.queue.empty()
