@@ -64,17 +64,23 @@ def set_pipe_max_size(*pipes):
 
 
 class Media(thread.Thread):
+    # If it takes too long to retrieve data from queue,
     timeout = WAIT_TIMEOUT
+
+    # If the queue gets too big, there is a problem with the transcoding
+    # process consuming it. The process should end.
+    queue_limit = 50
 
     def __init__(self, pipe, parent, name=None):
         super(Media, self).__init__(name=name)
         self.pipe = pipe
         self.parent = parent
         self._run = True
-        self.queue = queue.Queue()
-        self.lock = thread.Lock()
+        self.queue = queue.Queue(self.queue_limit)
+        self.lock = thread.RLock()
         self.write_lock = thread.Lock()
         self.daemon = False
+        self.error = None
 
     def run(self):
         while True:
@@ -84,9 +90,9 @@ class Media(thread.Thread):
             try:
                 data = self.queue.get(timeout=self.timeout)
             except queue.Empty as e:
-                self.parent.error = e
+                self.set_error(e)
                 show('Low Bandwidth:', self.name)
-                return
+                break
             if data is None:
                 break
 
@@ -102,8 +108,18 @@ class Media(thread.Thread):
         self.join()
         os.close(self.pipe)
 
+    def set_error(self, error):
+        with self.lock:
+            self.error = error
+            self.parent.error = error
+            self._run = False
+
     def add_data(self, data):
-        self.queue.put(data)
+        try:
+            self.queue.put_nowait(data)
+        except queue.Full as e:
+            self.set_error(e)
+            raise
 
     def release_pipe(self):
         # Set the pipe non blocking for reading
@@ -125,6 +141,7 @@ class Media(thread.Thread):
 class DataProc(thread.Thread):
     def __init__(self, parent):
         super(DataProc, self).__init__()
+        self.name = 'data'
         self.parent = parent
         self.queue = parent.data_queue
         self.latest_position = None
