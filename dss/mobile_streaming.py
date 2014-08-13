@@ -6,6 +6,7 @@ import tempfile
 import shutil
 import queue
 import datetime
+import traceback
 import makeobj
 import time
 
@@ -242,6 +243,13 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             self.remove_handler()
 
     def handle(self):
+        try:
+            self._handle()
+        except BaseException:
+            show(traceback.format_exc())
+            raise
+
+    def _handle(self):
         self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
         self.buffer = buffer.Buffer(self.request)
@@ -295,7 +303,11 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
                 if not self.run or type is None:
                     break
-                self.handle_content(type, payload)
+                try:
+                    self.handle_content(type, payload)
+                except Exception as e:
+                    show('Content handling error:', repr(e))
+                    break
 
             try:
                 self.proc.kill()
