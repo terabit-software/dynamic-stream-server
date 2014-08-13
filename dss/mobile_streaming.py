@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import os
 import json
 import struct
@@ -14,14 +13,21 @@ try:
     import socketserver
 except ImportError:
     import SocketServer as socketserver
+
 try:
     import fcntl
 except ImportError:
     fcntl = None
 
-from .tools import buffer, thread, process, ffmpeg, show
-from .config import config
-from .storage import db
+if __name__ == '__main__':
+    # Running standalone
+    import sys
+    _root = os.path.dirname(os.path.dirname(__file__))
+    sys.path.insert(0, _root)
+
+from dss.tools import buffer, thread, process, ffmpeg, show
+from dss.config import config
+from dss.storage import db
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
@@ -63,7 +69,6 @@ class Media(thread.Thread):
         super(Media, self).__init__(name=name)
         self.pipe = pipe
         self.parent = parent
-        self.count = 0
         self._run = True
         self.queue = queue.Queue()
         self.lock = thread.Lock()
@@ -97,7 +102,6 @@ class Media(thread.Thread):
 
     def add_data(self, data):
         self.queue.put(data)
-        self.count += 1
 
     def release_pipe(self):
         if self.write_lock.acquire(blocking=False):
@@ -237,8 +241,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         finally:
             self.remove_handler()
 
-    #__del__ = finish  # TODO Is this required?
-
     def handle(self):
         self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
@@ -256,7 +258,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             os.mkfifo(audio_filename)
             os.mkfifo(video_filename)
         except OSError as e:
-            print('Failed to create FIFO:', e)
+            show('Failed to create FIFO:', e)
             return
 
         audio_pipe = os.open(audio_filename, os.O_RDWR)
@@ -305,7 +307,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         try:
             type = DataContent[type]
         except KeyError:
-            print('Invalid header type "%s"' % type)
+            show('Invalid header type "%s"' % type)
 
         if type in (DataContent.metadata, DataContent.userdata):
             self.data_queue.put((type, payload))
@@ -355,9 +357,13 @@ class TCPServer(object):
         self.cond = thread.Condition()
         self._server = None
 
-    def start(self):
+    def start(self, create_thread=True):
+        if not create_thread:
+            self.run_server()
+            return
+
         with self.cond:
-            thread.Thread(self.run_server).start()
+            thread.Thread(self.run_server, name='TCP Server').start()
             self.cond.wait()
         return self
 
@@ -377,7 +383,7 @@ class TCPServer(object):
 if __name__ == "__main__":
     server = TCPServer()
     try:
-        server.start()
+        server.start(False)
     except KeyboardInterrupt:
         server.stop()
         MediaHandler.wait_handlers()
