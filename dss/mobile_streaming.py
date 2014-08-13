@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import os
 import json
 import struct
@@ -7,6 +6,7 @@ import tempfile
 import shutil
 import queue
 import datetime
+import traceback
 import makeobj
 import time
 
@@ -14,18 +14,27 @@ try:
     import socketserver
 except ImportError:
     import SocketServer as socketserver
+
 try:
     import fcntl
 except ImportError:
     fcntl = None
 
-from .tools import buffer, thread, process, ffmpeg, show
-from .config import config
-from .storage import db
+if __name__ == '__main__':
+    # Running standalone
+    import sys
+    _root = os.path.dirname(os.path.dirname(__file__))
+    sys.path.insert(0, _root)
+
+from dss.tools import buffer, thread, process, ffmpeg, show
+from dss.config import config
+from dss.storage import db
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
 PIPE_SIZE = None
+DEFAULT_PIPE_SIZE = 1024 * 1024
+WAIT_TIMEOUT = 2
 
 
 class DataContent(makeobj.Obj):
@@ -55,17 +64,23 @@ def set_pipe_max_size(*pipes):
 
 
 class Media(thread.Thread):
-    timeout = 10
+    # If it takes too long to retrieve data from queue,
+    timeout = WAIT_TIMEOUT
+
+    # If the queue gets too big, there is a problem with the transcoding
+    # process consuming it. The process should end.
+    queue_limit = 50
 
     def __init__(self, pipe, parent, name=None):
         super(Media, self).__init__(name=name)
         self.pipe = pipe
         self.parent = parent
-        self.count = 0
         self._run = True
-        self.queue = queue.Queue()
-        self.lock = thread.Lock()
+        self.queue = queue.Queue(self.queue_limit)
+        self.lock = thread.RLock()
+        self.write_lock = thread.Lock()
         self.daemon = False
+        self.error = None
 
     def run(self):
         while True:
@@ -75,28 +90,58 @@ class Media(thread.Thread):
             try:
                 data = self.queue.get(timeout=self.timeout)
             except queue.Empty as e:
-                show('Empty queue:', self.name)
-                self.parent.error = e
-                raise
+                self.set_error(e)
+                show('Low Bandwidth:', self.name)
+                break
             if data is None:
                 break
-            os.write(self.pipe, data)
+
+            with self.write_lock:
+                os.write(self.pipe, data)
 
     def stop(self):
         with self.lock:
             self._run = False
+        self.queue.empty()
+        self.release_pipe()
         self.queue.put(None)
         self.join()
         os.close(self.pipe)
 
+    def set_error(self, error):
+        with self.lock:
+            self.error = error
+            self.parent.error = error
+            self._run = False
+
     def add_data(self, data):
-        self.queue.put(data)
-        self.count += 1
+        try:
+            self.queue.put_nowait(data)
+        except queue.Full as e:
+            self.set_error(e)
+            raise
+
+    def release_pipe(self):
+        # Set the pipe non blocking for reading
+        fcntl.fcntl(self.pipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        read_size = 0
+        while not self.write_lock.acquire(blocking=False):
+            # If acquiring is not possible, the pipe is still blocked
+            try:
+                read = os.read(self.pipe, PIPE_SIZE or DEFAULT_PIPE_SIZE)
+                read_size += len(read)
+            except IOError:
+                break
+        else:
+            self.write_lock.release()
+        show('Read {0} bytes from {1!r} pipe'.format(read_size, self.name))
+        return read_size
 
 
 class DataProc(thread.Thread):
     def __init__(self, parent):
         super(DataProc, self).__init__()
+        self.name = 'data'
         self.parent = parent
         self.queue = parent.data_queue
         self.latest_position = None
@@ -219,9 +264,15 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         finally:
             self.remove_handler()
 
-    #__del__ = finish  # TODO Is this required?
-
     def handle(self):
+        try:
+            self._handle()
+        except BaseException:
+            show(traceback.format_exc())
+            raise
+
+    def _handle(self):
+        self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
         self.buffer = buffer.Buffer(self.request)
         self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
@@ -237,7 +288,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             os.mkfifo(audio_filename)
             os.mkfifo(video_filename)
         except OSError as e:
-            print('Failed to create FIFO:', e)
+            show('Failed to create FIFO:', e)
             return
 
         audio_pipe = os.open(audio_filename, os.O_RDWR)
@@ -263,11 +314,22 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             until the client stops sending data.
         """
         with process.Popen(proc_args, stdout=stdout, stderr=stderr) as self.proc:
-            while self.server.is_running and not self.error:
-                type, payload = self.read_data()
+            while self.server.is_running \
+                    and not self.error \
+                    and self.proc.poll() is None:
+                try:
+                    type, payload = self.read_data()
+                except Exception:
+                    show('Timeout')
+                    break
+
                 if not self.run or type is None:
                     break
-                self.handle_content(type, payload)
+                try:
+                    self.handle_content(type, payload)
+                except Exception as e:
+                    show('Content handling error:', repr(e))
+                    break
 
             try:
                 self.proc.kill()
@@ -279,7 +341,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         try:
             type = DataContent[type]
         except KeyError:
-            print('Invalid header type "%s"' % type)
+            show('Invalid header type "%s"' % type)
 
         if type in (DataContent.metadata, DataContent.userdata):
             self.data_queue.put((type, payload))
@@ -329,9 +391,13 @@ class TCPServer(object):
         self.cond = thread.Condition()
         self._server = None
 
-    def start(self):
+    def start(self, create_thread=True):
+        if not create_thread:
+            self.run_server()
+            return
+
         with self.cond:
-            thread.Thread(self.run_server).start()
+            thread.Thread(self.run_server, name='TCP Server').start()
             self.cond.wait()
         return self
 
@@ -351,7 +417,7 @@ class TCPServer(object):
 if __name__ == "__main__":
     server = TCPServer()
     try:
-        server.start()
+        server.start(False)
     except KeyboardInterrupt:
         server.stop()
         MediaHandler.wait_handlers()

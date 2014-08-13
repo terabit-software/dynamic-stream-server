@@ -111,6 +111,7 @@ class Buffer(thread.LockedObject):
                 break
 
             self.buffer.set(None, fill_later=True)
+            read = 0
             try:
                 read = self.socket.recv_into(self.buffer.view(), self.read_size)
                 if not read:
