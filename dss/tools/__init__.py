@@ -45,3 +45,25 @@ class DictObj(dict):
             del self[item]
         except KeyError:
             raise AttributeError(item)
+
+
+class Suppress:
+    """ Silence chosen exceptions.
+        Almost like `contextlib.suppress` (Only available on Python 3.4+).
+    """
+    def __init__(self, *args):
+        self.cls = args or None
+        self.errors = []
+
+    def __enter__(self):
+        return self
+
+    def __call__(self, *args):
+        return type(self)(*args)
+
+    def __exit__(self, cls, exc, trace):
+        if cls is not None:
+            self.errors.append((cls, exc, trace))
+
+        if self.cls is None or cls is None or issubclass(cls, self.cls):
+            return True
