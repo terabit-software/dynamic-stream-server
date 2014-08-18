@@ -26,7 +26,7 @@ if __name__ == '__main__':
     _root = os.path.dirname(os.path.dirname(__file__))
     sys.path.insert(0, _root)
 
-from dss.tools import buffer, thread, process, ffmpeg, show
+from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
 from dss.config import config
 from dss.storage import db
 
@@ -262,13 +262,23 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         if self.__cleanup_executed:
             return
 
-        self.audio.stop()
-        self.video.stop()
-        self.data_processing.stop()
+        s = Suppress(Exception)
 
-        db.mobile.update({'_id': self._id}, {'$set': {'active': False}})
-        shutil.rmtree(self.tmpdir)
+        # Stop all threads
+        with s: self.audio.stop()
+        with s: self.video.stop()
+        with s: self.data_processing.stop()
+
+        # Remove entry from database
+        if self._id:
+            db.mobile.update({'_id': self._id}, {'$set': {'active': False}})
+
+        # Remove temp directory and thumbnail
+        with s: shutil.rmtree(self.tmpdir)
+
         self.__cleanup_executed = True
+        if s.errors:
+            show('Errors during cleanup:', *s.errors, sep='\n', end='\n\n')
         show('Mobile stream "{0}" has ended'.format(self._id))
 
     def finish(self):
