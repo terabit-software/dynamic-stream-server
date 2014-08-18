@@ -379,17 +379,8 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
                 if not self.run or type is None:
                     break
-                try:
-                    self.handle_content(type, payload)
-                except Exception as e:
-                    show('Content handling error:', repr(e))
-                    break
 
-            try:
-                self.proc.kill()
-                self.proc.wait()
-            except Exception as e:
-                show('Proc exit error:', repr(e))
+                self.handle_content(type, payload)
 
     def handle_content(self, type, payload):
         try:
