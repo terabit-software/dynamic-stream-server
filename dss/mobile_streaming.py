@@ -410,7 +410,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
     def _get_stream_name(self):
         # TODO change this | Already changed? remove message only?
-        return self.provider_prefix + '-' + str(self._id)
+        return self.provider_prefix + '_' + str(self._id)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):

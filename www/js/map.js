@@ -89,26 +89,28 @@ function userAgentDetect(userAg){
     return -1;
 }
 
-function htmlContent(label, cam_id){
+function htmlContent(label, cam_id, cache){
     var time = Date.now();
-    var base = 5 * 60 * 1000;  // 5 minutes cache
-    var img_error = "'img_error.png'"
-    time = base * Math.round(time / base);
+    if (cache == undefined) {
+        cache = 5 * 60 * 1000;  // 5 minutes cache
+    }
+    var img_error = "'img_error.png'";
+    time = cache ? cache * Math.round(time / cache) : time;
 
 
     return '<img src="/thumb/' + cam_id + '.jpg?' + time + '" ' +
-           'width="320" height="240" ' +
+           'width="320"' +
            'onerror="this.src =' + img_error + '"></img>'+
            '<br>Camera ' + cam_id + '<br />' + label + '<br />';
 }
 
 // insere a legenda das câmeras
-function insertCaption(marker, label, cam_id) {
+function insertCaption(marker, label, cam_id, cache) {
     var infowindow = null;
 
     google.maps.event.addListener(marker, 'mouseover', function() {
         infowindow = new google.maps.InfoWindow({
-            content: htmlContent(label, cam_id)
+            content: htmlContent(label, cam_id, cache)
         });
         infowindow.open(map, marker);
     });
@@ -132,7 +134,11 @@ function mobileStreamPinPoints() {
         var data = JSON.parse(evt.data);
         if (data.request == 'all') {
             $(data.content).each(function (i, x) {
-                var pos = x.position.slice(-1)[0].coord;
+                try {
+                    var pos = x.position.slice(-1)[0].coord;
+                } catch(TypeError) {
+                    return;
+                }
                 console.log(pos);
                 marker = new google.maps.Marker({
                     position: new google.maps.LatLng(pos[0], pos[1]),
@@ -140,6 +146,9 @@ function mobileStreamPinPoints() {
                     flat: true,
                     icon: 'mobile.png'
                 });
+                var item = 'M_' + x._id.$oid;
+                insertCaption(marker, '', item, 10 * 1000);
+                insertVideoWindow(marker, item);
             });
         }
         else if (data.request == 'update'){
