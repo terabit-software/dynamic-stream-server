@@ -153,6 +153,11 @@ class DataProc(thread.Thread):
             self.parent.error = e
             show('Data processing error:', repr(e))
 
+    @classmethod
+    def decode_data(cls, payload):
+        data = json.loads(payload.decode())
+        return data['type'], data['content']
+
     def handle_data(self):
         while True:
             data = self.queue.get()
@@ -160,9 +165,7 @@ class DataProc(thread.Thread):
                 # TODO Maybe run some cleanup here
                 break
             type, payload = data
-            data = json.loads(payload.decode())
-            content = data['content']
-            action = data['type']
+            action, content = self.decode_data(payload)
 
             if type is DataContent.userdata:
                 fn = getattr(self, '_handle_' + action, None)
@@ -302,8 +305,24 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
         self.buffer = buffer.Buffer(self.request)
-        self._id = db.mobile.insert({'start': datetime.datetime.utcnow(),
-                                     'active': True})
+        db_data = {'start': datetime.datetime.utcnow(),
+                   'active': True}
+
+        # Read the first data block.
+        # It should have complete metadata information with at least the
+        # provided id, if it is known (or falsy value otherwise)
+        typ, payload = self.read_data()
+        typ = DataContent[typ]
+        if typ is DataContent.metadata:
+            action, payload = DataProc.decode_data(payload)
+            if payload['id']:
+                self._id = payload['id']
+        else:
+            show('Received first data block of type {0.name!r}({0.value}).\n'
+                 'Expected {1.name!r}({1.value})', typ, DataContent.metadata)
+
+        self._id = db.mobile.update({'_id': self._id}, db_data, upsert=True)['upserted']
+        print(self._id)
         self.destination_url = os.path.join(
             rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
         )
