@@ -219,8 +219,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.audio = None
         self.destination_url = None
         self.data_processing = None
+        self.thumbnail_path = None
         self.data_queue = queue.Queue()
-        self.tmpdir = tempfile.mkdtemp()
+        self.tmpdir = tempfile.mkdtemp(dir=config['mobile']['dir'])
         self._error = []
         self.__cleanup_executed = False
 
@@ -275,6 +276,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
         # Remove temp directory and thumbnail
         with s: shutil.rmtree(self.tmpdir)
+        with s: os.remove(self.thumbnail_path)
 
         self.__cleanup_executed = True
         if s.errors:
@@ -307,7 +309,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         )
         show('New mobile stream:', self.destination_url)
 
-        audio_filename = self.file('audio.aac')
+        audio_filename = self.file('audio.ts')
         video_filename = self.file('video.ts')
         try:
             os.mkfifo(audio_filename)
@@ -324,10 +326,18 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.video = Media(video_pipe, self, 'video').start()
         self.data_processing = DataProc(self).start()
 
-        args = ffmpeg.cmd_inputs(
-            '-y -re', [audio_filename, video_filename],
-            '-c:v copy -c:a libfdk_aac -b:a 64k -f flv',
-            self.destination_url
+        thumb = config['thumbnail']
+        self.thumbnail_path = os.path.join(
+            thumb['dir'], self._get_stream_name()
+        ) + '.' + thumb['format']
+
+        thumb_rate = str(1 / int(thumb['mobile_interval']))
+
+        args = ffmpeg.cmd_inputs_outputs(
+            '-y -re', [audio_filename, video_filename], '',
+            ['-c:v copy -c:a libfdk_aac -b:a 64k -f flv',
+             '-r ' + thumb_rate + ' -update 1 -an'],
+            [self.destination_url, self.thumbnail_path]
         )
 
         with self.file('proc_output', 'w') as out:

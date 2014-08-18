@@ -65,3 +65,29 @@ def cmd_outputs(cmd_input, input, base_cmd_output, cmd_output_specific, outputs,
         args += shlex.split(out_cmd)
         args.append(out)
     return args
+
+
+def cmd_inputs_outputs(cmd_input, inputs, base_cmd_output, cmd_output_specific, outputs, add_probe=True, bin=None):
+    """ Build FFmpeg command for multiple input files and a multiple outputs.
+        If an item on the `input` list is a 2-item tuple, it will be unpacked into
+        input command for this input and the input.
+        E.g.: ['audio_file.mp4', ('-f mpegts', 'video_stream')]
+    """
+    args = []
+    cmd_input_ = cmd_input
+    for ix, inp in enumerate(inputs):
+        if cmd_input is None:
+            cmd_input_, inp = inp
+        if isinstance(inp, tuple):
+            cmd_input_ += ' ' + inp[0]
+            inp = inp[1]
+        args += _input_cmd(cmd_input_, inp, add_probe, bin, add_bin=not ix)
+        cmd_input_ = cmd_input
+
+    base_cmd_output = shlex.split(base_cmd_output)
+
+    for out_cmd, out in zip(cmd_output_specific, outputs):
+        args += base_cmd_output
+        args += shlex.split(out_cmd)
+        args.append(out)
+    return args
