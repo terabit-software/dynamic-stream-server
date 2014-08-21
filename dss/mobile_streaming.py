@@ -29,6 +29,7 @@ if __name__ == '__main__':
 from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
 from dss.config import config
 from dss.storage import db
+from bson.objectid import ObjectId
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
@@ -42,6 +43,12 @@ class DataContent(makeobj.Obj):
     video = 1
     audio = 2
     userdata = 3
+
+
+class ContentType(makeobj.Obj):
+    meta = 0
+    coord = 1
+    cmd = 2
 
 
 def set_pipe_max_size(*pipes):
@@ -156,7 +163,8 @@ class DataProc(thread.Thread):
     @classmethod
     def decode_data(cls, payload):
         data = json.loads(payload.decode())
-        return data['type'], data['content']
+        content = data['content']
+        return data['type'], content
 
     def handle_data(self):
         while True:
@@ -315,14 +323,17 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         typ = DataContent[typ]
         if typ is DataContent.metadata:
             action, payload = DataProc.decode_data(payload)
-            if payload['id']:
-                self._id = payload['id']
+            try:
+                self._id = ObjectId(payload['id'])
+            except Exception:
+                pass
         else:
             show('Received first data block of type {0.name!r}({0.value}).\n'
                  'Expected {1.name!r}({1.value})', typ, DataContent.metadata)
-
-        self._id = db.mobile.update({'_id': self._id}, db_data, upsert=True)['upserted']
-        print(self._id)
+            return
+        response = db.mobile.update({'_id': self._id}, db_data, upsert=True)
+        self._id = response.get('upserted', self._id)
+        self.send_data(ContentType.meta, {'id': str(self._id)})
         self.destination_url = os.path.join(
             rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
         )
@@ -417,6 +428,15 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         if not payload:
             return None, None
         return typ, payload
+
+    def send_data(self, type, content):
+        data = {'type': type.name, 'content': content}
+        data = json.dumps(data).encode('utf-8')
+        self.write_data(DataContent.metadata, data)
+
+    def write_data(self, data_type, data):
+        header = struct.pack('!BI', data_type.value, len(data))
+        self.request.sendall(header + data)
 
     def _get_stream_name(self):
         # TODO change this | Already changed? remove message only?
