@@ -35,7 +35,7 @@ rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
 PIPE_SIZE = None
 DEFAULT_PIPE_SIZE = 1024 * 1024
-WAIT_TIMEOUT = 2
+WAIT_TIMEOUT = 5
 
 
 class DataContent(makeobj.Obj):
