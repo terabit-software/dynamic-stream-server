@@ -145,14 +145,12 @@ class DataProc(thread.Thread):
     @classmethod
     def decode_data(cls, payload):
         data = json.loads(payload.decode())
-        content = data['content']
-        return data['type'], content
+        return data['type'], data['content']
 
     def handle_data(self):
         while True:
             data = self.queue.get()
             if data is None:
-                # TODO Maybe run some cleanup here
                 break
             type, payload = data
             action, content = self.decode_data(payload)
@@ -317,7 +315,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self._id = response.get('upserted', self._id)
         self.send_data(ContentType.meta, {'id': str(self._id)})
         self.destination_url = os.path.join(
-            rtmpconf['addr'], rtmpconf['app'], self._get_stream_name()
+            rtmpconf['addr'], rtmpconf['app'], self.get_stream_name()
         )
         show('New mobile stream:', self.destination_url)
 
@@ -340,7 +338,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
         thumb = config['thumbnail']
         self.thumbnail_path = os.path.join(
-            thumb['dir'], self._get_stream_name()
+            thumb['dir'], self.get_stream_name()
         ) + '.' + thumb['format']
 
         thumb_rate = str(1 / int(thumb['mobile_interval']))
@@ -420,9 +418,12 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         header = struct.pack('!BI', data_type.value, len(data))
         self.request.sendall(header + data)
 
-    def _get_stream_name(self):
-        # TODO change this | Already changed? remove message only?
-        return self.provider_prefix + '_' + str(self._id)
+    def get_stream_name(self):
+        return self.stream_name(self._id)
+
+    @classmethod
+    def stream_name(cls, id):
+        return cls.provider_prefix + '_' + str(id)
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
