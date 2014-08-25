@@ -4,21 +4,20 @@ import json
 import struct
 import tempfile
 import shutil
-import queue
 import datetime
 import traceback
 import makeobj
 import time
 
 try:
-    import socketserver
+    import Queue as queue
 except ImportError:
-    import SocketServer as socketserver
+    import queue
 
 try:
-    import fcntl
+    import SocketServer as socketserver
 except ImportError:
-    fcntl = None
+    import socketserver
 
 if __name__ == '__main__':
     # Running standalone
@@ -27,9 +26,11 @@ if __name__ == '__main__':
     sys.path.insert(0, _root)
 
 from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
+from dss.tools.os import pipe_nonblock_read, set_pipe_max_size
 from dss.config import config
 from dss.storage import db
 from bson.objectid import ObjectId
+
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
@@ -49,25 +50,6 @@ class ContentType(makeobj.Obj):
     meta = 0
     coord = 1
     cmd = 2
-
-
-def set_pipe_max_size(*pipes):
-    global PIPE_SIZE
-    if PIPE_SIZE is None:
-        # On the first time, try to get the max pipe
-        # size value. Should only work on Linux
-        try:
-            with open('/proc/sys/fs/pipe-max-size') as f:
-                PIPE_SIZE = int(f.read())
-        except IOError:
-            PIPE_SIZE = False
-
-    if not PIPE_SIZE:
-        return
-
-    F_SETPIPE_SZ = 1031
-    for pipe in pipes:
-        fcntl.fcntl(pipe, F_SETPIPE_SZ, PIPE_SIZE)
 
 
 class Media(thread.Thread):
@@ -130,7 +112,7 @@ class Media(thread.Thread):
 
     def release_pipe(self):
         # Set the pipe non blocking for reading
-        fcntl.fcntl(self.pipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        pipe_nonblock_read(self.pipe)
         read_size = 0
         while not self.write_lock.acquire(blocking=False):
             # If acquiring is not possible, the pipe is still blocked
