@@ -37,3 +37,6 @@ class Server(object):
                 show('Listening at {0.host}:{0.port} (http)'.format(self))
                 break
         return self
+
+    def stop(self):
+        pass
