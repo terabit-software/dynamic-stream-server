@@ -4,29 +4,46 @@ from dss.thumbnail import Thumbnail
 from dss.web import Server
 from dss.tools import show_close
 from dss.tornado_setup import TornadoManager
-from dss.mobile_streaming import TCPServer, MediaHandler
+from dss.mobile_streaming import TCPServer
+from dss.web_handlers.mobile_stream import MobileStreamLocation
+
+
+_stop_tasks = []
+
+
+def load(start, stop=None, desc=None, wait_interrupt=False):
+    if stop is None:
+        obj = start
+        start = obj.start
+        stop = obj.stop
+    _stop_tasks.append((stop, desc))
+
+    if wait_interrupt:
+        try:
+            start()
+        except KeyboardInterrupt:
+            pass
+    else:
+        start()
+
+
+def shutdown():
+    for task, name in _stop_tasks[::-1]:
+        # Close tasks in reverse order
+        show_close(task, 'Stopping {}'.format(name))
 
 
 def main():
     Providers.load()
     Video.initialize_from_stats()
-    Video.auto_start()
-    Thumbnail.start_download()
-    tcp_server = TCPServer()
-    tcp_server.start()
-    server = Server()
-    server.start()
-    manager = TornadoManager()
-    try:
-        manager.start()
-    except KeyboardInterrupt:
-        pass
+    load(Thumbnail.start_download, Thumbnail.stop_download, desc='Thumbnail Download'),
+    load(Video.auto_start, Video.terminate_streams, desc='Video Streams'),
+    load(TCPServer(), desc='TCP Server'),
+    load(Server(), desc='HTTP Server Handlers'),
+    load(MobileStreamLocation.broadcaster, desc='Websocket Broadcaster')
+    load(TornadoManager(), desc='HTTP Server', wait_interrupt=True)
 
-    show_close(manager.stop, 'Stopping HTTP Server', True)
-    show_close(Video.terminate_streams, 'Stopping streams')
-    show_close(Thumbnail.stop_download, 'Stopping thumbnail download')
-    show_close(tcp_server.stop, 'Stopping TCP Server')
-    show_close(MediaHandler.wait_handlers, 'Closing remaining TCP connections')
+    shutdown()
 
 
 if __name__ == '__main__':
