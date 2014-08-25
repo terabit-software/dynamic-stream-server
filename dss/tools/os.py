@@ -11,19 +11,20 @@ try:
 except ImportError:
     fcntl = None
 
+PIPE_SIZE = None
+try:
+    with open('/proc/sys/fs/pipe-max-size') as f:
+        PIPE_SIZE = int(f.read())
+except IOError:
+    PIPE_SIZE = False
+
 
 def set_pipe_max_size(*pipes):
-    global PIPE_SIZE
-    if PIPE_SIZE is None:
-        # On the first time, try to get the max pipe
-        # size value. Should only work on Linux
-        try:
-            with open('/proc/sys/fs/pipe-max-size') as f:
-                PIPE_SIZE = int(f.read())
-        except IOError:
-            PIPE_SIZE = False
-
     if not PIPE_SIZE:
+        warnings.warn(
+            'Pipe size not set because the value is invalid (Non Linux OS)',
+            RuntimeWarning
+        )
         return
 
     F_SETPIPE_SZ = 1031
@@ -35,7 +36,7 @@ def pipe_nonblock_read(pipe):
     if fcntl is None:
         warnings.warn(
             'Pipe not set to nonblock because `fcntl` is absent',
-            RuntimeError
+            RuntimeWarning
         )
         return
     fcntl.fcntl(pipe, fcntl.F_SETFL, os.O_NONBLOCK)

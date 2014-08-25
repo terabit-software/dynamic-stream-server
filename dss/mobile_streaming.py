@@ -8,6 +8,7 @@ import datetime
 import traceback
 import makeobj
 import time
+from bson.objectid import ObjectId
 
 try:
     import Queue as queue
@@ -26,15 +27,13 @@ if __name__ == '__main__':
     sys.path.insert(0, _root)
 
 from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
-from dss.tools.os import pipe_nonblock_read, set_pipe_max_size
+from dss.tools.os import pipe_nonblock_read, set_pipe_max_size, PIPE_SIZE
 from dss.config import config
 from dss.storage import db
-from bson.objectid import ObjectId
 
 
 rtmpconf = config['rtmp-server']
 HEADER_SIZE = 5  # bytes
-PIPE_SIZE = None
 DEFAULT_PIPE_SIZE = 1024 * 1024
 WAIT_TIMEOUT = 5
 
