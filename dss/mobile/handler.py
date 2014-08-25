@@ -6,7 +6,6 @@ import tempfile
 import shutil
 import datetime
 import traceback
-import makeobj
 import time
 from bson.objectid import ObjectId
 
@@ -20,165 +19,19 @@ try:
 except ImportError:
     import socketserver
 
-if __name__ == '__main__':
-    # Running standalone
-    import sys
-    _root = os.path.dirname(os.path.dirname(__file__))
-    sys.path.insert(0, _root)
 
 from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
-from dss.tools.os import pipe_nonblock_read, set_pipe_max_size, PIPE_SIZE
+from dss.tools.os import set_pipe_max_size
 from dss.config import config
 from dss.storage import db
 
+from .enum import ContentType, DataContent
+from .const import WAIT_TIMEOUT, HEADER_SIZE
+from .processing.media import Media
+from .processing.data import DataProc
+
 
 rtmpconf = config['rtmp-server']
-HEADER_SIZE = 5  # bytes
-DEFAULT_PIPE_SIZE = 1024 * 1024
-WAIT_TIMEOUT = 5
-
-
-class DataContent(makeobj.Obj):
-    metadata = 0
-    video = 1
-    audio = 2
-    userdata = 3
-
-
-class ContentType(makeobj.Obj):
-    meta = 0
-    coord = 1
-    cmd = 2
-
-
-class Media(thread.Thread):
-    # If it takes too long to retrieve data from queue,
-    timeout = WAIT_TIMEOUT
-
-    # If the queue gets too big, there is a problem with the transcoding
-    # process consuming it. The process should end.
-    queue_limit = 50
-
-    def __init__(self, pipe, parent, name=None):
-        super(Media, self).__init__(name=name)
-        self.pipe = pipe
-        self.parent = parent
-        self._run = True
-        self.queue = queue.Queue(self.queue_limit)
-        self.lock = thread.RLock()
-        self.write_lock = thread.Lock()
-        self.daemon = False
-        self.error = None
-
-    def run(self):
-        while True:
-            with self.lock:
-                if not self._run:
-                    break
-            try:
-                data = self.queue.get(timeout=self.timeout)
-            except queue.Empty as e:
-                self.set_error(e)
-                show('Low Bandwidth:', self.name)
-                break
-            if data is None:
-                break
-
-            with self.write_lock:
-                os.write(self.pipe, data)
-
-    def stop(self):
-        with self.lock:
-            self._run = False
-        self.queue.empty()
-        self.release_pipe()
-        self.queue.put(None)
-        self.join()
-        os.close(self.pipe)
-
-    def set_error(self, error):
-        with self.lock:
-            self.error = error
-            self.parent.error = error
-            self._run = False
-
-    def add_data(self, data):
-        try:
-            self.queue.put_nowait(data)
-        except queue.Full as e:
-            self.set_error(e)
-            raise
-
-    def release_pipe(self):
-        # Set the pipe non blocking for reading
-        pipe_nonblock_read(self.pipe)
-        read_size = 0
-        while not self.write_lock.acquire(blocking=False):
-            # If acquiring is not possible, the pipe is still blocked
-            try:
-                read = os.read(self.pipe, PIPE_SIZE or DEFAULT_PIPE_SIZE)
-                read_size += len(read)
-            except IOError:
-                break
-        else:
-            self.write_lock.release()
-        show('Read {0} bytes from {1!r} pipe'.format(read_size, self.name))
-        return read_size
-
-
-class DataProc(thread.Thread):
-    def __init__(self, parent):
-        super(DataProc, self).__init__()
-        self.name = 'data'
-        self.parent = parent
-        self.queue = parent.data_queue
-        self.latest_position = None
-
-    def run(self):
-        try:
-            self.handle_data()
-        except BaseException as e:
-            self.parent.error = e
-            show('Data processing error:', repr(e))
-
-    @classmethod
-    def decode_data(cls, payload):
-        data = json.loads(payload.decode())
-        return data['type'], data['content']
-
-    def handle_data(self):
-        while True:
-            data = self.queue.get()
-            if data is None:
-                break
-            type, payload = data
-            action, content = self.decode_data(payload)
-
-            if type is DataContent.userdata:
-                fn = getattr(self, '_handle_' + action, None)
-                if fn is None:
-                    show('Warning: action not found for user content of type', repr(action))
-                else:
-                    fn(content)
-
-            elif type is DataContent.metadata:
-                # TODO Handle metadata
-                show('Metadata:', repr(data))
-
-    def _handle_coord(self, data):
-        obj = {'time': datetime.datetime.utcnow(),
-               'coord': [data['latitude'], data['longitude']]}
-        self.latest_position = obj
-        db.mobile.update({'_id': self.parent._id},
-                         {'$push': {'position': obj}})
-        show('Stream: {0} | {1} | {2}'.format(
-            self.parent._id, obj['time'], obj['coord'])
-        )
-
-    def stop(self):
-        self.queue.empty()
-        self.queue.put(None)
-        self.join()
 
 
 class MediaHandler(socketserver.BaseRequestHandler, object):
@@ -423,48 +276,3 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     @classmethod
     def stream_name(cls, id):
         return cls.provider_prefix + '_' + str(id)
-
-
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    daemon_threads = True
-    is_running = False
-
-
-class TCPServer(object):
-
-    def __init__(self):
-        self.host = config.get('local', 'addr')
-        self.port = config.getint('local', 'tcp_port')
-        self.cond = thread.Condition()
-        self._server = None
-
-    def start(self, create_thread=True):
-        if not create_thread:
-            self.run_server()
-            return
-
-        with self.cond:
-            thread.Thread(self.run_server, name='TCP Server').start()
-            self.cond.wait()
-        return self
-
-    def run_server(self):
-        self._server = ThreadedTCPServer((self.host, self.port), MediaHandler)
-        show('Listening at {0.host}:{0.port} (tcp)'.format(self))
-        with self.cond:
-            self.cond.notify_all()
-        self._server.is_running = True
-        self._server.serve_forever()
-
-    def stop(self):
-        self._server.is_running = False
-        self._server.shutdown()
-
-
-if __name__ == "__main__":
-    server = TCPServer()
-    try:
-        server.start(False)
-    except KeyboardInterrupt:
-        server.stop()
-        MediaHandler.wait_handlers()
