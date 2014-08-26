@@ -7,6 +7,8 @@ from dss.tools import thread
 
 
 class WebsocketBroadcast(thread.Thread):
+    _instances = {}
+
     def __init__(self, cls):
         """ `cls` must be a class providing a list/set of
             connected websocket clients (cls.clients) and
@@ -40,3 +42,15 @@ class WebsocketBroadcast(thread.Thread):
         self.queue.empty()
         self.queue.put(None)
         self.join()
+
+    @classmethod
+    def register(cls, key, class_):
+        if cls._instances.get(key) is not None:
+            raise KeyError('Key already registered: {0!r}'.format(key))
+        instance = cls(class_)
+        cls._instances[key] = instance
+        return instance
+
+    @classmethod
+    def select(cls, name):
+        return cls._instances[name]
