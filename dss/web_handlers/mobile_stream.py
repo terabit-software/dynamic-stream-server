@@ -1,19 +1,51 @@
 import tornado.websocket
 from bson import json_util
 
-from ..storage import db
+from dss.mobile import handler
+from dss.tools import thread
+from dss.storage import db
+from dss.websocket import WebsocketBroadcast
 
 
 class MobileStreamLocation(tornado.websocket.WebSocketHandler):
-    def on_open(self, message):
-        pass
+    lock = thread.RLock()
+    clients = set()
+    broadcaster = None
 
-    def on_message(self, message):
-        streams = list(db.mobile.find({'active': True}))
+    def open(self):
+        with self.lock:
+            self.clients.add(self)
+
+        MediaHandler = handler.MediaHandler
+        streams = []
+        for stream in db.mobile.find({'active': True}):
+            stream['name'] = MediaHandler.stream_name(stream.pop('_id'))
+            stream['position'] = stream['position'][-1] \
+                if stream.get('position') else None
+            streams.append(stream)
+
         self.write_message(json_util.dumps({
             'request': 'all',
             'content': streams,
         }))
 
-    def on_close(self):
+    def on_message(self, message):
         pass
+
+    def on_close(self):
+        with self.lock:
+            self.clients.remove(self)
+
+    @classmethod
+    def broadcast_message(cls, message, request='update'):
+        if request is not None:
+            message = {
+                'request': request,
+                'content': message,
+            }
+        cls.broadcaster.add_message(json_util.dumps(message))
+
+
+# Register Broadcaster
+MobileStreamLocation.broadcaster = \
+    WebsocketBroadcast.register('mobile_location', MobileStreamLocation)
