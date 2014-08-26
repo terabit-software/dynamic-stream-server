@@ -19,7 +19,7 @@ function initialize(pinPoints) {
 
 //insere o maker e configura as funções do click
 function insertPinPoint(myLatlng, item, map, label, icon){
-    marker = new google.maps.Marker({
+    var marker = new google.maps.Marker({
         position: myLatlng,
         map: map,
         flat: true,
@@ -121,38 +121,57 @@ function insertCaption(marker, label, cam_id, cache) {
     });
 }
 
+function setMobilePinPoint(name, pos){
+    marker = new google.maps.Marker({
+        position: new google.maps.LatLng(pos[0], pos[1]),
+        map: map,
+        flat: true,
+        icon: 'mobile.png'
+    });
+    insertCaption(marker, '', name, 10 * 1000);
+    insertVideoWindow(marker, name);
+    return marker
+}
+
+
 function mobileStreamPinPoints() {
     var ws = new WebSocket('ws://' + location.host + '/mobile/location');
-    var markers = []; // TODO Add here
+    var markers = {};
 
     ws.onopen = function () {
         ws.send("Hello, world");
     };
 
     ws.onmessage = function (evt) {
+        console.log('>>> message received')
         //console.log(evt.data);
         var data = JSON.parse(evt.data);
         if (data.request == 'all') {
             $(data.content).each(function (i, x) {
+                console.log(x.name);
                 try {
-                    var pos = x.position.slice(-1)[0].coord;
+                    var pos = x.position.coord;
                 } catch(TypeError) {
                     return;
                 }
                 console.log(pos);
-                marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(pos[0], pos[1]),
-                    map: map,
-                    flat: true,
-                    icon: 'mobile.png'
-                });
-                var item = 'M_' + x._id.$oid;
-                insertCaption(marker, '', item, 10 * 1000);
-                insertVideoWindow(marker, item);
+                markers[x.name] = setMobilePinPoint(x.name, pos);
             });
         }
         else if (data.request == 'update'){
+            console.log(data.content);
+            var name = data.content.name;
+            var pos = data.content.info.coord;
+            try{
+                markers[name].setMap(null);
+            } catch (ReferenceError) {}
 
+            markers[name] = setMobilePinPoint(name, pos);
+        }
+        else if (data.request == 'close') {
+            try{
+                markers[data.content.name].setMap(null);
+            } catch (ReferenceError) {}
         }
     };
 }

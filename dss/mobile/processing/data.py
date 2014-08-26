@@ -3,6 +3,7 @@ import datetime
 
 from dss.tools import thread, show
 from dss.storage import db
+from dss.websocket import WebsocketBroadcast
 from ..enum import DataContent
 
 
@@ -46,11 +47,17 @@ class DataProc(thread.Thread):
                 show('Metadata:', repr(data))
 
     def _handle_coord(self, data):
+
         obj = {'time': datetime.datetime.utcnow(),
                'coord': [data['latitude'], data['longitude']]}
         self.latest_position = obj
         db.mobile.update({'_id': self.parent._id},
                          {'$push': {'position': obj}})
+
+        WebsocketBroadcast.select('mobile_location').cls.broadcast_message({
+            'name': self.parent.get_stream_name(),
+            'info': obj
+        })
 
         show('Stream: {0} | {1} | {2}'.format(
             self.parent._id, obj['time'], obj['coord'])
