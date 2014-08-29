@@ -9,7 +9,12 @@ except ImportError:
 
 from dss.tools import thread, show
 from dss.config import config
+from dss.storage import db
 from .handler import MediaHandler
+
+
+# If some streams are active, the program did no close properly.
+db.mobile.update({'active': True}, {'active': False})
 
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
