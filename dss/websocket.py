@@ -6,6 +6,9 @@ except ImportError:
 from dss.tools import thread
 
 
+PING_INTERVAL = 15  # seconds
+
+
 class WebsocketBroadcast(thread.Thread):
     _instances = {}
 
@@ -22,6 +25,19 @@ class WebsocketBroadcast(thread.Thread):
         self.queue = queue.Queue()
         self.running = False
         self.cls = cls
+        self.ping_timer = thread.IntervalTimer(PING_INTERVAL, self.ping)
+        self.ping_timer.start()
+
+    def clients(self):
+        with self.cls.lock:
+            return list(self.cls.clients)
+
+    def ping(self):
+        for client in self.clients():
+            try:
+                client.ping(bytes())
+            except Exception as e:
+                print(e)
 
     def add_message(self, message):
         self.queue.put(message)
@@ -32,13 +48,13 @@ class WebsocketBroadcast(thread.Thread):
             message = self.queue.get()
             if message is None:
                 break
-            with self.cls.lock:
-                clients = list(self.cls.clients)
-            for client in clients:
+
+            for client in self.clients():
                 client.write_message(message)
 
     def stop(self):
         self.running = False
+        self.ping_timer.cancel()
         self.queue.empty()
         self.queue.put(None)
         self.join()
