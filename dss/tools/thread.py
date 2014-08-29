@@ -8,6 +8,7 @@ from itertools import islice
 
 Lock = threading.Lock
 RLock = threading.RLock
+Timer = threading.Timer
 
 
 class MetaLockedObject(type):
@@ -278,3 +279,13 @@ class Thread(threading.Thread):
         if not self._stop_fn:
             raise ThreadError('Not able stop thread!')
         self._stop_fn()
+
+
+class IntervalTimer(Timer):
+    def run(self):
+        while True:
+            self.finished.wait(self.interval)
+            if self.finished.is_set():
+                break
+            self.function(*self.args, **self.kwargs)
+        self.finished.set()
