@@ -161,11 +161,15 @@ function mobileStreamPinPoints() {
         else if (data.request == 'update'){
             console.log(data.content);
             var name = data.content.name;
-            var pos = data.content.info.coord;
             try{
                 markers[name].setMap(null);
             } catch (ReferenceError) {}
 
+            if (data.content.info == 'finished'){
+                return;
+            }
+
+            var pos = data.content.info.coord;
             markers[name] = setMobilePinPoint(name, pos);
         }
         else if (data.request == 'close') {

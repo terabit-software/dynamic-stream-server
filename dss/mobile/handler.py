@@ -24,6 +24,7 @@ from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
 from dss.tools.os import set_pipe_max_size
 from dss.config import config
 from dss.storage import db
+from dss.websocket import WebsocketBroadcast
 
 from .enum import ContentType, DataContent
 from .const import WAIT_TIMEOUT, HEADER_SIZE
@@ -120,6 +121,11 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         # Remove temp directory and thumbnail
         with s: shutil.rmtree(self.tmpdir)
         with s: os.remove(self.thumbnail_path)
+
+        WebsocketBroadcast.select('mobile_location').cls.broadcast_message({
+            'name': self.get_stream_name(),
+            'info': 'finished'
+        })
 
         self.__cleanup_executed = True
         if s.errors:
