@@ -21,7 +21,7 @@ class WebsocketBroadcast(thread.Thread):
             instances.
         """
         super(WebsocketBroadcast, self).__init__()
-        self.name = type(self).__name__
+        self.name = type(self).__name__ + '(%s)' % cls.__name__
         self.queue = queue.Queue()
         self.running = False
         self.cls = cls

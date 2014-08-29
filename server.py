@@ -1,3 +1,4 @@
+from dss.config import config
 from dss.providers import Providers
 from dss.video import Video
 from dss.thumbnail import Thumbnail
@@ -11,7 +12,18 @@ from dss.web_handlers.mobile_stream import MobileStreamLocation
 _stop_tasks = []
 
 
-def load(start, stop=None, desc=None, wait_interrupt=False):
+def run_start(fn):
+    try:
+        for f in fn:
+            f()
+    except TypeError:
+        fn()
+
+
+def load(start, stop=None, desc=None, enabled=None, wait_interrupt=False):
+    if enabled and not config.getboolean(enabled, 'enabled'):
+        return
+
     if stop is None:
         obj = start
         start = obj.start
@@ -20,11 +32,11 @@ def load(start, stop=None, desc=None, wait_interrupt=False):
 
     if wait_interrupt:
         try:
-            start()
+            run_start(start)
         except KeyboardInterrupt:
             pass
     else:
-        start()
+        run_start(start)
 
 
 def shutdown():
@@ -35,12 +47,25 @@ def shutdown():
 
 def main():
     Providers.load()
-    Video.initialize_from_stats()
-    load(Thumbnail.start_download, Thumbnail.stop_download, desc='Thumbnail Download'),
-    load(Video.auto_start, Video.terminate_streams, desc='Video Streams'),
-    load(TCPServer(), desc='TCP Server'),
+
+    load([Video.initialize_from_stats, Video.auto_start],
+         Video.terminate_streams,
+         desc='Video Streams',
+         enabled='video_start'),
+
+    load(Thumbnail.start_download,
+         Thumbnail.stop_download,
+         desc='Thumbnail Download',
+         enabled='thumbnail'),
+
+    load(TCPServer(), desc='TCP Server', enabled='mobile'),
+
     load(Server(), desc='HTTP Server Handlers'),
-    load(MobileStreamLocation.broadcaster, desc='Websocket Broadcaster')
+
+    load(MobileStreamLocation.broadcaster,
+         desc='Websocket Broadcaster',
+         enabled='mobile')
+
     load(TornadoManager(), desc='HTTP Server', wait_interrupt=True)
 
     shutdown()
