@@ -26,7 +26,6 @@ class WebsocketBroadcast(thread.Thread):
         self.running = False
         self.cls = cls
         self.ping_timer = thread.IntervalTimer(PING_INTERVAL, self.ping)
-        self.ping_timer.start()
 
     def clients(self):
         with self.cls.lock:
@@ -44,6 +43,7 @@ class WebsocketBroadcast(thread.Thread):
 
     def run(self):
         self.running = True
+        self.ping_timer.start()
         while self.running:
             message = self.queue.get()
             if message is None:
