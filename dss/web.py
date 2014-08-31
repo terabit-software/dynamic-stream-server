@@ -10,21 +10,31 @@ from .web_handlers import stream_control, stream_stats, info, mobile_stream
 STATIC_PATH = os.path.join(os.path.dirname(dirname), 'www', '')
 
 
-class Server(object):
-    host = config.get('local', 'addr')
-    port = config.getint('local', 'port')
-
-    application = tornado.web.Application([
+def build_application():
+    controllers = [
         (r'/control/(.*?)/(' + stream_control.options + r')/?(\d*)',
          stream_control.StreamControlHandler),
         (r'/stats/([^/]*)/?(.*)', stream_stats.StreamStatsHandler),
         (r'/info/(' + info.options + r')/?(.*)', info.InfoHandler),
         (r'/mobile/location', mobile_stream.MobileStreamLocation),
-        (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH})
-    ])
+    ]
 
+    for name in config.get_list('web', 'external_handlers'):
+        print('>>>', name)
+        #controllers.append('todo: add here!')
+
+    controllers.append(
+        (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH})
+    )
+    return tornado.web.Application(controllers)
+
+
+class Server(object):
+    host = config.get('local', 'addr')
+    port = config.getint('local', 'port')
     tcp_retry = 10  # seconds
     daemon_threads = True
+    application = build_application()
 
     def start(self):
         while True:
