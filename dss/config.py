@@ -78,5 +78,6 @@ create_dir(config['cache']['dir'])
 create_dir(config['thumbnail']['dir'])
 create_dir(config['log']['dir'])
 create_dir(config['mobile']['dir'])
+create_dir(config['recorder']['dir'])
 
 PROVIDER_CONFIG_ENCODING = config['providers']['conf_file_enc']
