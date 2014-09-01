@@ -2,9 +2,13 @@
 Dynamic Stream Server
 ====
 
-* Authors: João Bernardo Oliveira, Nelson Perez
-* Version:   0.1
-* Git:    <https://bitbucket.org/jbvsmo/dynamic-stream-server>
+* Version: 0.5
+* Authors:
+    * [João Bernardo Oliveira](https://github.com/jbvsmo/)
+    * [Nelson Perez](https://github.com/bilthon/)
+* Git: <https://github.com/terabit-software/dynamic-stream-server>
+* License: [BSD](COPYRIGHT)
+* Contact: <contato@terabit.com.br>
 
 
 Installation Guide:
@@ -17,23 +21,24 @@ Installation Guide:
     Libav **is not supported**.
 
     Requirements:
-
     - librtmp
 
     Optional (for best results):
-
     - libx264
     - libfdk_aac
 
 2. ## [Nginx][2] with [Nginx-rtmp-module][3].
 
     Download both projects and follow the instructions on README page of the latter.
-
     - Nginx 1.0 or newer (or whichever the other recommends).
     - Nginx-rtmp-module 0.9 or newer (older versions had a bug that did not tell when
       users stopped viewing the RTMP stream).
 
-3. ## Python 2.6+
+3. ## [MongoDB][5]
+
+    A MongoDB service must be running for some parts of the program to work.
+
+4. ## Python 2.6+
 
     This program will not work on Python versions older than 2.6. Do not try to use.
 
@@ -42,7 +47,8 @@ Installation Guide:
 
     Both CPython and PyPy are supported. Other Python interpreters are untested, but *may* work.
 
-4. ## Running `setup.py`
+
+5. ## Running `setup.py`
 
     This file will install several python modules.
 
@@ -54,8 +60,6 @@ Installation Guide:
         $ python setup.py develop
 
     Replace `python` if you want another interpreter, e.g.: `python3`, `python3.3`, `pypy`
-
-
 
 
 Running:
@@ -89,7 +93,7 @@ Other:
 
 - Windows Support:
 
-    The project works on Windows and the Nginx-rtmp-module is known to compile as of [version 1.0.1][4].
+    The project should also work on Windows and the Nginx-rtmp-module is known to compile as of [version 1.0.1][4].
 
     You may have to replace `exec_play` and `exec_play_done` to `on_play` and `on_play_done` respectively
     on `nginx.conf` and remove the call to `curl`.
@@ -103,3 +107,5 @@ Other:
 [3]: http://github.com/arut/nginx-rtmp-module
 [4]: http://rarut.wordpress.com/2013/06/13/windows-support-in-1-0-1/
 [5]: http://www.virtualenv.org/en/latest/
+[6]: http://www.mongodb.org/
+
