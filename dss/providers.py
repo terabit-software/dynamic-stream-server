@@ -11,6 +11,7 @@ except ImportError:
 from .config import Parser, config, dirname
 from .tools import ffmpeg
 from . import loader
+from . import recorder
 
 
 class BaseStreamProvider(object):
@@ -22,6 +23,7 @@ class BaseStreamProvider(object):
     conf = None  # Dictionary like object: configparser section
     in_stream = None
     identifier = None
+    recorder = None
     _rtmp_server = config['rtmp-server']
     out_stream = '{0}{1}/'.format(
         _rtmp_server['addr'],
@@ -69,9 +71,13 @@ class BaseStreamProvider(object):
     @classmethod
     def post_initialization(cls):
         """ Set id information after stream data initialization
+            Start related services
         """
         for k, v in cls._stream_data.items():
             v['id'] = cls.get_id(k)
+
+        if cls.recorder is not None:
+            cls.recorder.start()
 
     @classmethod
     def streams(cls):
@@ -203,6 +209,15 @@ class Providers(object):
             name = os.path.splitext(os.path.basename(conf))[0]
             cls.create(name, parser)
 
+    @classmethod
+    def finish(cls):
+        """ Stop Providers related services:
+                - Stream recording
+        """
+        for provider in cls._all.values():
+            if provider.recorder is not None:
+                provider.recorder.stop()
+
     #noinspection PyUnresolvedReferences
     @classmethod
     def _insert(cls, provider, auto_enable=True):
@@ -213,6 +228,20 @@ class Providers(object):
         cls._all[provider.identifier] = provider
         if auto_enable and provider.is_enabled:
             cls._enabled[provider.identifier] = provider
+
+    @classmethod
+    def add_recorder(cls, provider, conf):
+        try:
+            rec = conf['record']
+        except KeyError:
+            return
+
+        if not rec.getboolean('enabled', True):
+            return
+
+        interval = rec.getint('interval', None)
+        format = rec.get('format', None)
+        provider.recorder = recorder.StreamRecorder(provider, interval, format)
 
     @classmethod
     def create(cls, cls_name, conf, auto_enable=True):
@@ -288,14 +317,14 @@ class Providers(object):
             attr['_stream_data'] = stream_data
             attr['_stream_list'] = list(stream_data)
 
-        conf = conf['base']
+        confb = conf['base']
         attr.update(
             name = cls_name,
-            identifier = conf['identifier'],
-            in_stream = conf['access'],
-            thumbnail_local = conf.getboolean('thumbnail_local', fallback=True),
-            conf = conf,
-            is_enabled = conf.getboolean(
+            identifier = confb['identifier'],
+            in_stream = confb['access'],
+            thumbnail_local = confb.getboolean('thumbnail_local', fallback=True),
+            conf = confb,
+            is_enabled = confb.getboolean(
                 'enabled',
                 fallback=config['providers'].getboolean('enabled')
             ),
@@ -307,6 +336,8 @@ class Providers(object):
             cls_name = cls_name.encode('utf-8')
 
         provider = type(cls_name, (cls_,), attr)
+        cls.add_recorder(provider, conf)
+
         cls._insert(provider, auto_enable)
 
         if 'lazy' not in mode:

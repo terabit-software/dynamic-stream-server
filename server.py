@@ -46,7 +46,7 @@ def shutdown():
 
 
 def main():
-    Providers.load()
+    load(Providers.load, Providers.finish, desc='Stream Providers')
 
     load([Video.initialize_from_stats, Video.auto_start],
          Video.terminate_streams,
