@@ -2,10 +2,14 @@ import time
 import tornado.ioloop
 import tornado.web
 import os
+import glob
+from os.path import join, basename, splitext
 
 from .config import config, dirname
 from .tools import show
+from .loader import load_object
 from .web_handlers import stream_control, stream_stats, info, mobile_stream
+
 
 STATIC_PATH = os.path.join(os.path.dirname(dirname), 'www', '')
 
@@ -18,10 +22,13 @@ def build_application():
         (r'/info/(' + info.options + r')/?(.*)', info.InfoHandler),
         (r'/mobile/location', mobile_stream.MobileStreamLocation),
     ]
+    package = 'web_handlers_ext'
 
-    for name in config.get_list('web', 'external_handlers'):
-        print('>>>', name)
-        #controllers.append('todo: add here!')
+    for name in glob.glob(join(dirname, package, '*.py')):
+        handler = load_object(splitext(basename(name))[0] + '.HANDLER',
+                              'dss.' + package)
+        if handler is not None:
+            controllers.append(handler)
 
     controllers.append(
         (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH})
