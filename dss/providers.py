@@ -309,6 +309,7 @@ class Providers(object):
             url = None
             parser = None
             name = None
+            db_name = None
             if 'download' in mode:
                 fetch.append(loader.Place.url)
                 url = strm['url']
