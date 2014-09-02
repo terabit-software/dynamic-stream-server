@@ -1,5 +1,5 @@
 import tornado.web
-import json
+from bson import json_util
 
 from .. import providers
 
@@ -34,6 +34,6 @@ class InfoHandler(tornado.web.RequestHandler):
             data = providers.Providers.select(id).get_stream_data(id)
 
         self.set_header('Content-Type', 'application/json')
-        self.finish(json.dumps(data))
+        self.finish(json_util.dumps(data))
 
     post = get
