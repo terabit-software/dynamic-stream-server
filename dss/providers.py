@@ -152,6 +152,13 @@ class NamedStreamProvider(BaseStreamProvider):
         return cls.identifier + str(cls._stream_list.index(stream))
 
 
+class DynamicStreamProvider(NamedStreamProvider):
+
+    @classmethod
+    def get_id(cls, stream):
+        pass
+
+
 # ---------------------------------------------------------------------
 class Providers(object):
     """ Container for all providers and enabled providers.
@@ -257,16 +264,22 @@ class Providers(object):
                 thumbnail_local = true  # optional
 
                 [streams]
-                mode = lazy, download, cache, file, list, named
+                mode = lazy, download, cache, file, list, named, db
                 url = http://url-for-download-mode.com
                 parser = module.function  # This function must generate
                                           # json-serializable data if cache
                                           # is enabled
+                db = collection_name
                 file = local_file_to_load.json
                 list =
                     ID1 GEO1 DESCRIPITION1   # if "named", the ID is the name
                     ID2 GEO2 DESCRIPITION2   # used to fetch the stream with
                                              # the access url
+
+                [record]  # all optional
+                enable = yes       # default is "yes" if record section is defined
+                format = %H:%M:%S  # strftime format for file name
+                interval = 45      # seconds for each file
 
             The mode list is how the streams will be provided.
         """
@@ -277,7 +290,11 @@ class Providers(object):
         if 'named' in mode:
             cls_ = NamedStreamProvider
 
-        attr = {}
+        attr = {
+            'mode': mode,
+            'dynamic': 'dynamic' in mode
+        }
+
         if 'list' in mode:
             def fetch_function():
                 keys = strm.get_list('keys')
@@ -303,9 +320,16 @@ class Providers(object):
                 fetch.append(loader.Place.file)
                 join = os.path.join
                 name = join(join(dirname, 'providers_data'), strm['file'])
+            if 'db' in mode:
+                fetch.append(loader.Place.db)
+                db_name = strm['db']
 
             def fetch_function():
-                streams = loader.get_streams(name, url, parser, fetch)
+                streams = loader.get_streams(
+                    name, url, parser, db_name,
+                    is_dynamic=attr['dynamic'],
+                    places=fetch
+                )
                 return OrderedDict((x['id'], x) for x in streams)
 
         if 'lazy' in mode:
