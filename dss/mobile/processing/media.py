@@ -15,13 +15,17 @@ class Media(thread.Thread):
 
     # If the queue gets too big, there is a problem with the transcoding
     # process consuming it. The process should end.
-    queue_limit = 50
+    # With preliminary tests on 4K video, the queue can grow much bigger than 50.
+    # Optimally, this shold be based on video bitrate
+    queue_limit = 50000
 
-    def __init__(self, pipe, parent, name=None):
+    def __init__(self, pipe, parent, name=None, queue_limit=None):
         super(Media, self).__init__(name=name)
         self.pipe = pipe
         self.parent = parent
         self._run = True
+        if queue_limit is not None:
+            self.queue_limit = queue_limit
         self.queue = queue.Queue(self.queue_limit)
         self.lock = thread.RLock()
         self.write_lock = thread.Lock()
