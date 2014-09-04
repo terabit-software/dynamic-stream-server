@@ -53,6 +53,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     provider_prefix = 'M'
     _handlers = set()
     _handlers_lock = thread.Lock()
+    _time_limit = config.getint('mobile', 'time_limit')
 
     def setup(self):
         self._id = None
@@ -66,6 +67,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         self.thumbnail_path = None
         self.data_queue = queue.Queue()
         self.tmpdir = tempfile.mkdtemp(dir=config['mobile']['dir'])
+        self._timer_alarm = False
+        self.timer = thread.Timer(self._time_limit, self.timer_alarm) \
+            if self._time_limit else None
         self._error = []
         self.__cleanup_executed = False
 
@@ -90,6 +94,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         while cls._handlers:
             time.sleep(0.1)
 
+    def timer_alarm(self):
+        self._timer_alarm = True
+
     def file(self, name, open_options=None):
         """ Return the name of a file in the temp dir.
             If open_options is supplied, the file will
@@ -108,6 +115,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             return
 
         s = Suppress(Exception)
+
+        # Stop timer if any
+        if self.timer is not None:
+            self.timer.cancel()
 
         # Stop all threads
         with s: self.audio.stop()
@@ -169,6 +180,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             show('Received first data block of type {0.name!r}({0.value}).\n'
                  'Expected {1.name!r}({1.value})', typ, DataContent.metadata)
             return
+
         response = db.mobile.update({'_id': self._id}, db_data, upsert=True)
         self._id = response.get('upserted', self._id)
         self.send_data(ContentType.meta, {'id': str(self._id)})
@@ -208,6 +220,10 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             [self.destination_url, self.thumbnail_path]
         )
 
+        # Start the timer for alarm
+        if self.timer is not None:
+            self.timer.start()
+
         with self.file('proc_output', 'w') as out:
             with self.file('proc_err', 'w') as err:
                 self.handle_proc_loop(args, out, err)
@@ -218,6 +234,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         """
         with process.Popen(proc_args, stdout=stdout, stderr=stderr) as self.proc:
             while self.server.is_running \
+                    and not self._timer_alarm \
                     and not self.error \
                     and self.proc.poll() is None:
                 try:
@@ -230,6 +247,9 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
                     break
 
                 self.handle_content(type, payload)
+
+            if self._timer_alarm:
+                show('Stream finished due to time limit: {0} seconds'.format(self._time_limit))
 
     def handle_content(self, type, payload):
         try:
