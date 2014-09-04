@@ -50,4 +50,5 @@ class TCPServer(object):
 
     def stop(self):
         self._server.is_running = False
+        MediaHandler.wait_handlers()
         self._server.shutdown()
