@@ -13,22 +13,15 @@ Dynamic Stream Server
 
 ----
 
-*Dynamic Stream Server* (DSS) is a tool to manage video streams on a server using RTMP to unify them. After your streams are published on the RTMP server, they can be served over HTTP with [Apple HLS][1] or [MPEG-DASH][2] besides RTMP.
+*Dynamic Stream Server* (DSS) is a tool to manage video streams on a server using RTMP to unify them. After your streams are published on the RTMP server, they can be served over HTTP with [Apple HLS][7] or [MPEG-DASH][8] besides RTMP.
 
-DSS uses [Nginx][3] and the [Nginx RTMP][4] module to provide reliable video streams over HTTP and RTMP and [FFmpeg][5] to provide transcoding capabilities. For metadata storage (like geotagging), [MongoDB][6] is needed.
+DSS uses [Nginx][2] and the [Nginx RTMP][3] module to provide reliable video streams over HTTP and RTMP and [FFmpeg][1] to provide transcoding capabilities. For metadata storage (like geotagging), [MongoDB][6] is needed.
 
 DSS also provides a sytem to publish mobile streams using MPEG-TS over HTTP (generated currently only on Android devices).
 
 Usage:
 
 ![](www/images/usage.png)
-
-[1]: http://en.wikipedia.org/wiki/HTTP_Live_Streaming
-[2]: http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
-[3]: http://nginx.org/
-[4]: http://github.com/arut/nginx-rtmp-module
-[5]: http://ffmpeg.org/
-[6]: http://www.mongodb.org/
 
 ---- 
 
@@ -132,11 +125,12 @@ directory to save files, add this to the file:
     You should change all the paths on `local.conf` and `nginx.conf` to be compliant with Windows.
 
 
-
 [1]: http://ffmpeg.org/
 [2]: http://nginx.org/
 [3]: http://github.com/arut/nginx-rtmp-module
 [4]: http://rarut.wordpress.com/2013/06/13/windows-support-in-1-0-1/
 [5]: http://www.virtualenv.org/en/latest/
 [6]: http://www.mongodb.org/
+[7]: http://en.wikipedia.org/wiki/HTTP_Live_Streaming
+[8]: http://en.wikipedia.org/wiki/Dynamic_Adaptive_Streaming_over_HTTP
 
