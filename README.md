@@ -2,7 +2,7 @@
 Dynamic Stream Server
 ====
 
-* Version: 0.5
+* Version: 0.6
 * Authors:
     * [João Bernardo Oliveira](https://github.com/jbvsmo/)
     * [Nelson Perez](https://github.com/bilthon/)
