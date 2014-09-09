@@ -13,11 +13,16 @@ _stop_tasks = []
 
 
 def run_start(fn):
+    # Try running functions on a list
     try:
         for f in fn:
             f()
     except TypeError:
-        fn()
+        pass
+    else:
+        return
+    # If it is not iterable, use as function
+    fn()
 
 
 def load(start, stop=None, desc=None, enabled=None, wait_interrupt=False):
