@@ -1,0 +1,10 @@
+!__init__.py
+!cetrio.conf
+!cetrio_cam.json
+!cetrio_cam.py
+!fundao.conf
+!ponte-rio-niteroi.conf
+
+*.conf
+*.py
+*.json
