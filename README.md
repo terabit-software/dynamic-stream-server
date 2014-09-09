@@ -13,6 +13,10 @@ Dynamic Stream Server
 
 ----
 
+This software is being developed at the *Laboratório de Computação Paralela e Sistemas Móveis* ([Compasso](http://www.compasso.ufrj.br/)) - Federal University of Rio de Janeiro ([COPPE/UFRJ](http://www.coppe.ufrj.br/)).
+
+----
+
 *Dynamic Stream Server* (DSS) is a tool to manage video streams on a server using RTMP to unify them. After your streams are published on the RTMP server, they can be served over HTTP with [Apple HLS][7] or [MPEG-DASH][8] besides RTMP.
 
 DSS uses [Nginx][2] and the [Nginx RTMP][3] module to provide reliable video streams over HTTP and RTMP and [FFmpeg][1] to provide transcoding capabilities. For metadata storage (like geotagging), [MongoDB][6] is needed.
