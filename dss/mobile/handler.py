@@ -215,7 +215,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
         args = ffmpeg.cmd_inputs_outputs(
             '-y -re', [audio_filename, video_filename], '',
-            ['-c:v copy -c:a libfdk_aac -b:a 64k -f flv',
+            ['-c:v copy -c:a copy -bsf:a aac_adtstoasc -f flv',
              '-r ' + thumb_rate + ' -update 1 -an'],
             [self.destination_url, self.thumbnail_path]
         )
