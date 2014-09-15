@@ -11,8 +11,8 @@ _db = client[database_name]
 
 
 class KeyValueStorage(object):
-    def __init__(self, database_name):
-        self.__dict__['_db'] = _db[database_name]
+    def __init__(self, database_name, db=_db):
+        self.__dict__['_db'] = db[database_name]
 
     def __getattr__(self, name):
         obj = self._db.find_one({'key': name})

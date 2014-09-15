@@ -58,13 +58,13 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     def setup(self):
         self._id = None
         self.run = True
-        self.buffer = None
         self.proc = None
         self.video = None
         self.audio = None
         self.destination_url = None
         self.data_processing = None
         self.thumbnail_path = None
+        self.buffer = buffer.Buffer(self.request)
         self.data_queue = queue.Queue()
         self.tmpdir = tempfile.mkdtemp(dir=config['mobile']['dir'])
         self._timer_alarm = False
@@ -161,7 +161,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     def _handle(self):
         self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
-        self.buffer = buffer.Buffer(self.request)
         db_data = {'start': datetime.datetime.utcnow(),
                    'active': True}
 
@@ -287,12 +286,20 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             return None, None
         return typ, payload
 
-    def send_data(self, type, content):
+    @classmethod
+    def build_metadata(cls, type, content):
         data = {'type': type.name, 'content': content}
-        data = json.dumps(data).encode('utf-8')
-        self.write_data(DataContent.metadata, data)
+        return json.dumps(data).encode('utf-8')
 
-    def write_data(self, data_type, data):
+    def send_data(self, type, content):
+        # Deprecated. Use write_data directly
+        self.write_data(type, content, as_metadata=True)
+
+    def write_data(self, data_type, data, as_metadata=False):
+        if as_metadata:
+            data = self.build_metadata(data_type, data)
+            data_type = DataContent.metadata
+
         header = struct.pack('!BI', data_type.value, len(data))
         self.request.sendall(header + data)
 
