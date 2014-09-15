@@ -58,13 +58,13 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     def setup(self):
         self._id = None
         self.run = True
-        self.buffer = None
         self.proc = None
         self.video = None
         self.audio = None
         self.destination_url = None
         self.data_processing = None
         self.thumbnail_path = None
+        self.buffer = buffer.Buffer(self.request)
         self.data_queue = queue.Queue()
         self.tmpdir = tempfile.mkdtemp(dir=config['mobile']['dir'])
         self._timer_alarm = False
@@ -161,7 +161,6 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
     def _handle(self):
         self.request.settimeout(WAIT_TIMEOUT)
         self.add_handler()
-        self.buffer = buffer.Buffer(self.request)
         db_data = {'start': datetime.datetime.utcnow(),
                    'active': True}
 
