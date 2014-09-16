@@ -19,7 +19,8 @@ class ViewHandler(tornado.web.RequestHandler):
             'longitude': long,
             'zoomlevel': config.getint('web', 'map.zoom'),
             'traffic_layer': js_bool(
-                config.getboolean('web', 'map.traffic_layer'))
+                config.getboolean('web', 'map.traffic_layer')),
+            'api_key': config.get('web', 'map.api_key'),
         }
 
         view = loader.load('map.html').generate(**options)
