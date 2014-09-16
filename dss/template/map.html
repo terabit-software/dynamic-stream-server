@@ -34,7 +34,12 @@
         }
 
         $(document).ready(function(){
-            initialize(pinPoints);
+            var options = {
+                center: new google.maps.LatLng({{ latitude }}, {{ longitude }}),
+                zoom: {{ zoomlevel }},
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            initialize(pinPoints, options, {{ traffic_layer }});
             mobileStreamPinPoints();
         });
     </script>
