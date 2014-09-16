@@ -52,6 +52,7 @@ class Parser(configparser.ConfigParser):
 
 
 dirname = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(dirname, 'template')
 
 config = Parser()
 config.read(os.path.join(dirname, 'global.conf'))

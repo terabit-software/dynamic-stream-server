@@ -8,7 +8,7 @@ from os.path import join, basename, splitext
 from .config import config, dirname
 from .tools import show
 from .loader import load_object
-from .web_handlers import stream_control, stream_stats, info, mobile_stream
+from .web_handlers import stream_control, stream_stats, info, mobile_stream, view
 
 
 STATIC_PATH = os.path.join(os.path.dirname(dirname), 'www', '')
@@ -30,9 +30,10 @@ def build_application():
         if handler is not None:
             controllers.append(handler)
 
-    controllers.append(
-        (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH})
-    )
+    controllers.extend([
+        (r'/', view.ViewHandler),
+        (r'/(.*)', tornado.web.StaticFileHandler, {'path': STATIC_PATH}),
+    ])
     return tornado.web.Application(controllers)
 
 

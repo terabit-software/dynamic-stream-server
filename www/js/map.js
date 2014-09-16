@@ -4,16 +4,13 @@ var markersArray = [];
 var marker;
 var map;
 
-function initialize(pinPoints) {
+function initialize(pinPoints, myOptions, addTrafficLayer) {
     console.log('intialize map');
-    var myOptions = {
-        center: new google.maps.LatLng(-22.932933, -43.200397),
-        zoom: 13,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-    var trafficLayer = new google.maps.TrafficLayer();
-    trafficLayer.setMap(map);
+    if(addTrafficLayer){
+        var trafficLayer = new google.maps.TrafficLayer();
+        trafficLayer.setMap(map);
+    }
     pinPoints(map);
 }
 
