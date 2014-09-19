@@ -6,9 +6,11 @@ import glob
 from os.path import join, basename, splitext
 
 from .config import config, dirname
-from .tools.show import show
+from .tools.show import Show
 from .loader import load_object
 from .web_handlers import stream_control, stream_stats, info, mobile_stream, view
+
+show = Show('Web')
 
 
 STATIC_PATH = os.path.join(os.path.dirname(dirname), 'www', '')
@@ -49,7 +51,7 @@ class Server(object):
             try:
                 self.application.listen(self.port, self.host)
             except IOError:
-                show('Waiting TCP port to be used.')
+                show.warn('Waiting TCP port to be used.')
                 time.sleep(self.tcp_retry)
             else:
                 show('Listening at {0.host}:{0.port} (http)'.format(self))

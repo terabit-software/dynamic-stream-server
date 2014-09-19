@@ -6,8 +6,10 @@ except ImportError:
 
 from dss.tools.os import pipe_nonblock_read, PIPE_SIZE
 from dss.tools import thread
-from dss.tools.show import show
+from dss.tools.show import Show
 from ..const import WAIT_TIMEOUT, DEFAULT_PIPE_SIZE
+
+show = Show('Mobile.Media')
 
 
 class Media(thread.Thread):
@@ -85,5 +87,5 @@ class Media(thread.Thread):
                 break
         else:
             self.write_lock.release()
-        show('Read {0} bytes from {1!r} pipe'.format(read_size, self.name))
+        show.debug('Read {0} bytes from {1!r} pipe'.format(read_size, self.name))
         return read_size

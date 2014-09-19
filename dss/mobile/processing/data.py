@@ -2,10 +2,12 @@ import json
 import datetime
 
 from dss.tools import thread
-from dss.tools.show import show
+from dss.tools.show import Show
 from dss.storage import db
 from dss.websocket import WebsocketBroadcast
 from ..enum import DataContent
+
+show = Show('Mobile.Data')
 
 
 class DataProc(thread.Thread):

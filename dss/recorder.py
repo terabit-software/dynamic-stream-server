@@ -10,8 +10,10 @@ except ImportError:
     from urllib.request import urlopen
 
 from .tools import thread
-from .tools.show import show
+from .tools.show import Show
 from .config import config
+
+show = Show('Recorder')
 
 # Template
 # http://server.com/rtmp_control/record/start|stop?srv=SRV&app=APP&name=NAME&rec=REC

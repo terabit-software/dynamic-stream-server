@@ -12,8 +12,10 @@ except ImportError:
     from urllib2 import urlopen
 
 from .config import config, dirname
-from .tools.show import show
+from .tools.show import Show
 from .storage import db
+
+show = Show('Loader')
 
 
 def _get_from_file(file_path):
@@ -108,7 +110,7 @@ def get_streams(name=None, url=None, parser=None, db_name=None, is_dynamic=False
         except IOError:
             pass
         except Exception as e:
-            show("Error when loading streams data from cache:", repr(e))
+            show.error("Error when loading streams data from cache:", repr(e))
 
     if Place.url in places:
         try:
@@ -119,7 +121,7 @@ def get_streams(name=None, url=None, parser=None, db_name=None, is_dynamic=False
             populate_database(db_name, url_data)
             return url_data
         except Exception as e:
-            show("Error when loading streams data from web:", repr(e))
+            show.error("Error when loading streams data from web:", repr(e))
 
     if cached_data:
         warnings.warn('Using possibly outdated cache for %r provider '
