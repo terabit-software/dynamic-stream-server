@@ -1,7 +1,7 @@
 import tornado.web
 
 from .. import video
-from ..tools import show
+from ..tools.show import show
 
 from ..config import config
 

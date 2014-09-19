@@ -10,8 +10,11 @@ except ImportError:
 
 from .config import config
 from .providers import Providers
-from .tools import show, process, thread, noxml
+from .tools import process, thread, noxml
+from .tools.show import Show
 from .stats import StreamStats
+
+show = Show('Video')
 
 
 class StreamHTTPClient(object):
@@ -153,7 +156,7 @@ class Stream(object):
 
                     if self.proc_run:  # Should be running, but isn't
                         self.stats.timed.died()
-                        show(self._proc_msg(pid, 'died'))
+                        show.warn(self._proc_msg(pid, 'died'))
                         time.sleep(self.reload_timeout)
                         if self.proc_run:  # It might have been stopped after waiting
                             start_msg = 'restarted'

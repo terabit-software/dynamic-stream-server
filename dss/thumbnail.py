@@ -4,9 +4,12 @@ import os
 from concurrent import futures
 
 from .config import config
-from .tools import show, thread, process, ffmpeg
+from .tools import thread, process, ffmpeg
+from .tools.show import Show
 from .providers import Providers
 from .video import Video
+
+show = Show('Thumbnail')
 
 
 class Thumbnail(object):
@@ -130,7 +133,8 @@ class Thumbnail(object):
                     cams = len(cls.stream_list)
                     show('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
                     if error:
-                        show('Could not fetch:\n' + ', '.join(error))
+                        show.warn('Could not fetch:')
+                        show.warn(', '.join(error))
 
                 error = set(error)
                 for s in cls.stream_list:  # Record stats
@@ -154,7 +158,7 @@ class Thumbnail(object):
                 if interval >= 0:
                     cls.lock.wait(interval)
                 elif cls.run:
-                    show('Thumbnail round delayed by {0:.2f} seconds'.format(-interval))
+                    show.warn('Thumbnail round delayed by {0:.2f} seconds'.format(-interval))
 
     @classmethod
     def make_file_names(cls, id, resize_information=False):
@@ -239,6 +243,7 @@ class Thumbnail(object):
                 deleted.append(id)
 
         if deleted:
-            show('Old thumbnails removed:\n', ', '.join(deleted))
+            show('Old thumbnails removed:')
+            show(', '.join(deleted))
 
         return deleted

@@ -3,7 +3,7 @@ try:
 except ImportError:
     import queue
 
-from dss.tools import thread
+from .tools import thread
 
 
 PING_INTERVAL = 15  # seconds

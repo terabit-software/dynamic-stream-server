@@ -20,8 +20,9 @@ except ImportError:
     import socketserver
 
 
-from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
+from dss.tools import buffer, thread, process, ffmpeg, Suppress
 from dss.tools.os import set_pipe_max_size
+from dss.tools.show import Show
 from dss.config import config
 from dss.storage import db
 from dss.websocket import WebsocketBroadcast
@@ -31,6 +32,7 @@ from .const import WAIT_TIMEOUT, HEADER_SIZE
 from .processing.media import Media
 from .processing.data import DataProc
 
+show = Show('Mobile')
 
 rtmpconf = config['rtmp-server']
 
@@ -140,14 +142,14 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
 
         self.__cleanup_executed = True
         if s.errors:
-            show('Errors during cleanup:', *s.errors, sep='\n', end='\n\n')
+            show.warn('Errors during cleanup:', *s.errors, sep='\n', end='\n\n')
         show('Mobile stream "{0}" has ended'.format(self._id))
 
     def finish(self):
         try:
             self.cleanup()
         except Exception as e:
-            show('Exception while cleaning:', repr(e))
+            show.error('Exception while cleaning:', repr(e))
         finally:
             self.remove_handler()
 
@@ -155,7 +157,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         try:
             self._handle()
         except BaseException:
-            show(traceback.format_exc())
+            show.error(traceback.format_exc())
             raise
 
     def _handle(self):
@@ -176,8 +178,8 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             except Exception:
                 pass
         else:
-            show('Received first data block of type {0.name!r}({0.value}).\n'
-                 'Expected {1.name!r}({1.value})', typ, DataContent.metadata)
+            show.error('Received first data block of type {0.name!r}({0.value}).\n'
+                       'Expected {1.name!r}({1.value})', typ, DataContent.metadata)
             return
 
         response = db.mobile.update({'_id': self._id}, db_data, upsert=True)
@@ -194,7 +196,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             os.mkfifo(audio_filename)
             os.mkfifo(video_filename)
         except OSError as e:
-            show('Failed to create FIFO:', e)
+            show.error('Failed to create FIFO:', e)
             return
 
         audio_pipe = os.open(audio_filename, os.O_RDWR)
@@ -239,7 +241,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
                 try:
                     type, payload = self.read_data()
                 except Exception:
-                    show('Timeout')
+                    show.warn('Timeout')
                     break
 
                 if not self.run or type is None:
@@ -254,7 +256,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         try:
             type = DataContent[type]
         except KeyError:
-            show('Invalid header type "%s"' % type)
+            show.warn('Invalid header type "%s"' % type)
 
         if type in (DataContent.metadata, DataContent.userdata):
             self.data_queue.put((type, payload))
@@ -263,8 +265,8 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
         elif type is DataContent.audio:
             self.audio.add_data(payload)
         else:
-            show('Unknown content received: ' +
-                 'Type: {0}, Payload: {1!r}'.format(type, payload))
+            show.warn('Unknown content received: ' +
+                      'Type: {0}, Payload: {1!r}'.format(type, payload))
 
     def process_header(self, data):
         """ Strips out the header

@@ -7,10 +7,13 @@ except ImportError:
     import socketserver
 
 
-from dss.tools import thread, show
+from dss.tools import thread
+from dss.tools.show import Show
 from dss.config import config
 from dss.storage import db
 from .handler import MediaHandler
+
+show = Show('Mobile')
 
 
 # If some streams are active, the program did no close properly.

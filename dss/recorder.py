@@ -9,8 +9,11 @@ except ImportError:
     from urllib.parse import urlencode
     from urllib.request import urlopen
 
-from dss.tools import thread, show
-from dss.config import config
+from .tools import thread
+from .tools.show import Show
+from .config import config
+
+show = Show('Recorder')
 
 # Template
 # http://server.com/rtmp_control/record/start|stop?srv=SRV&app=APP&name=NAME&rec=REC
