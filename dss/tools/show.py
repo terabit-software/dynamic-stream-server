@@ -13,16 +13,26 @@ class Show(object):
     def __call__(self, *args, **kw):
         """ Print message with lock.and log it.
         """
+        level = kw.pop('level', log.Levels.info)
+
         with self.print_lock:
             print(*args, **kw)
             sys.stdout.flush()
 
         sep = kw.get('sep', ' ')
-        self.logger.log(sep.join(map(str, args)))
+        self.logger.log(sep.join(map(str, args)), level=level)
 
+    def __getattr__(self, name):
+        level = log.Levels(name)
+
+        def call(*args, **kw):
+            kw['level'] = level
+            return self(*args, **kw)
+
+        return call
 
 # Generic print with log
-show = Show(None)
+show = Show('dss')
 
 
 def show_close(fn, msg, top_line_break=False, ok_msg='[ok]', err_msg='[fail]'):
