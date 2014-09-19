@@ -5,7 +5,7 @@ import datetime
 import makeobj
 
 from ..config import config
-
+from . import thread
 
 logdir = config['log']['dir']
 
@@ -24,6 +24,7 @@ class Writer(object):
         self.filename = filename
         self._opened = False
         self.file = None
+        self.lock = thread.Lock()
         self._format = '[{date}] [{owner}] {level.name}: {message}'
 
     def format(self, owner, level, message):
@@ -37,7 +38,8 @@ class Writer(object):
 
     def add(self, *args):
         # TODO Add to queue and write on another thread.
-        self._write(*args)
+        with self.lock:
+            self._write(*args)
 
     def _write(self, owner, level, message):
         text = self.format(owner, level, message)
