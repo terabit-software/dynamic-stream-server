@@ -12,7 +12,7 @@ except ImportError:
     from urllib2 import urlopen
 
 from .config import config, dirname
-from .tools import show
+from .tools.show import show
 from .storage import db
 
 

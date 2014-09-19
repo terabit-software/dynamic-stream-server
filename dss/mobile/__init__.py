@@ -7,7 +7,8 @@ except ImportError:
     import socketserver
 
 
-from dss.tools import thread, show
+from dss.tools import thread
+from dss.tools.show import show
 from dss.config import config
 from dss.storage import db
 from .handler import MediaHandler

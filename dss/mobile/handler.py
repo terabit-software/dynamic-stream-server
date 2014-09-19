@@ -20,8 +20,9 @@ except ImportError:
     import socketserver
 
 
-from dss.tools import buffer, thread, process, ffmpeg, show, Suppress
+from dss.tools import buffer, thread, process, ffmpeg, Suppress
 from dss.tools.os import set_pipe_max_size
+from dss.tools.show import show
 from dss.config import config
 from dss.storage import db
 from dss.websocket import WebsocketBroadcast

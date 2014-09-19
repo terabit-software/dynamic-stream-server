@@ -3,7 +3,7 @@ from dss.providers import Providers
 from dss.video import Video
 from dss.thumbnail import Thumbnail
 from dss.web import Server
-from dss.tools import show_close
+from dss.tools.show import show_close
 from dss.tornado_setup import TornadoManager
 from dss.mobile import TCPServer
 from dss.web_handlers.mobile_stream import MobileStreamLocation

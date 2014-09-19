@@ -6,7 +6,7 @@ import glob
 from os.path import join, basename, splitext
 
 from .config import config, dirname
-from .tools import show
+from .tools.show import show
 from .loader import load_object
 from .web_handlers import stream_control, stream_stats, info, mobile_stream, view
 

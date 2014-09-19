@@ -4,7 +4,8 @@ import os
 from concurrent import futures
 
 from .config import config
-from .tools import show, thread, process, ffmpeg
+from .tools import thread, process, ffmpeg
+from .tools.show import show
 from .providers import Providers
 from .video import Video
 

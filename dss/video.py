@@ -10,7 +10,8 @@ except ImportError:
 
 from .config import config
 from .providers import Providers
-from .tools import show, process, thread, noxml
+from .tools import process, thread, noxml
+from .tools.show import show
 from .stats import StreamStats
 
 

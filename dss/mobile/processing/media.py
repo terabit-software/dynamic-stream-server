@@ -5,7 +5,8 @@ except ImportError:
     import queue
 
 from dss.tools.os import pipe_nonblock_read, PIPE_SIZE
-from dss.tools import thread, show
+from dss.tools import thread
+from dss.tools.show import show
 from ..const import WAIT_TIMEOUT, DEFAULT_PIPE_SIZE
 
 
