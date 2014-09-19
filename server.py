@@ -3,10 +3,18 @@ from dss.providers import Providers
 from dss.video import Video
 from dss.thumbnail import Thumbnail
 from dss.web import Server
-from dss.tools.show import show_close
+from dss.tools.show import Show, show_close
 from dss.tornado_setup import TornadoManager
 from dss.mobile import TCPServer
 from dss.web_handlers.mobile_stream import MobileStreamLocation
+
+show = Show('Main')
+_show_close = show_close
+
+
+def show_close(*args, **kw):
+    kw['show'] = show
+    return _show_close(*args, **kw)
 
 
 _stop_tasks = []

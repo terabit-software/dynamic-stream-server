@@ -35,7 +35,7 @@ class Show(object):
 show = Show('dss')
 
 
-def show_close(fn, msg, top_line_break=False, ok_msg='[ok]', err_msg='[fail]'):
+def show_close(fn, msg, top_line_break=False, ok_msg='[ok]', err_msg='[fail]', show=show):
     """ Call a function (usually to close a part of the program) and show
         a message.
     """
