@@ -32,14 +32,14 @@ if py_version in [(2, 6), (3, 0)]:
 
 setup(
     name='Dynamic Stream Server',
-    version = '0.1',
+    version = '0.7',
     description = 'Dynamic video streaming system',
     author = [
         'João Bernardo Oliveira',
         'Nelson Perez',
     ],
     author_email = 'jbvsmo@gmail.com',
-    url = 'https://bitbucket.org/jbvsmo/dynamic-stream-server',
+    url = 'https://github.com/terabit-software/dynamic-stream-server',
     packages = [],
     install_requires = install_requires,
 )
