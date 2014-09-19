@@ -3,6 +3,7 @@ var devices = ['nokia', 'iphone', 'ipod', 'ipad', 'blackberry',
 var markersArray = [];
 var marker;
 var map;
+var image_path = '/images/';
 
 function initialize(pinPoints, myOptions, addTrafficLayer) {
     console.log('intialize map');
@@ -15,12 +16,12 @@ function initialize(pinPoints, myOptions, addTrafficLayer) {
 }
 
 //insere o maker e configura as funções do click
-function insertPinPoint(myLatlng, item, map, label, icon){
+function insertPinPoint(myLatlng, item, map, label, status){
     var marker = new google.maps.Marker({
         position: myLatlng,
         map: map,
         flat: true,
-        icon : icon
+        icon : image_path + (status ? 'on.png' : 'off.png')
     });
 
     insertVideoWindow(marker, item);
@@ -49,7 +50,7 @@ function insertVideoWindow(marker, item) {
 
 function buildVideoUrl(cam_id){
     var userAgent = navigator.userAgent.toLowerCase();
-    var url = 'viewer.html?id=' + cam_id;
+    var url = '/static/viewer.html?id=' + cam_id;
 
     switch(userAgentDetect(userAgent)){
     case 0: // Nokia
@@ -91,7 +92,7 @@ function htmlContent(label, cam_id, cache){
     if (cache == undefined) {
         cache = 5 * 60 * 1000;  // 5 minutes cache
     }
-    var img_error = "'img_error.png'";
+    var img_error = "'" + image_path +  "img_error.png'";
     time = cache ? cache * Math.round(time / cache) : time;
 
 
@@ -123,7 +124,7 @@ function setMobilePinPoint(name, pos){
         position: new google.maps.LatLng(pos[0], pos[1]),
         map: map,
         flat: true,
-        icon: 'mobile.png'
+        icon: image_path + 'mobile.png'
     });
     insertCaption(marker, '', name, 10 * 1000);
     insertVideoWindow(marker, name);

@@ -4,14 +4,15 @@
     <script
         type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key={{ api_key }}&sensor=false">
     </script>
-    <script type="text/javascript" src="js/jquery.min.js"></script>
-    <script type="text/javascript" src="js/map.js"></script>
-    <script type="text/javascript" src="js/fancybox/jquery.fancybox.js"></script>
-    <link rel="stylesheet" type="text/css" href="js/fancybox/jquery.fancybox.css?v=2.1.5" media="screen" />
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/map.js"></script>
+    <script type="text/javascript" src="/js/fancybox/jquery.fancybox.js"></script>
+    <link rel="stylesheet" type="text/css" href="/js/fancybox/jquery.fancybox.css?v=2.1.5" media="screen" />
     <script type="text/javascript">
+        var info_path = '/info/provider';
         function pinPoints(map){
             $.ajax({
-                url: '/info/provider',
+                url: info_path,
                 success: function(data){
                     $.each(data, function(x, obj){
                         getProviderStreams(obj.id, map);
@@ -22,12 +23,13 @@
 
         function getProviderStreams(name, map){
             $.ajax({
-                url: '/info/provider/' + name,
+                url: info_path + '/' + name,
                 success: function(data){
                     $.each(data, function(x, el){
                             var pos = new google.maps.LatLng(el.geo[0], el.geo[1]);
-                            var icon = (el.status === undefined || el.status) ? 'on.png' : 'off.png';
-                            insertPinPoint(pos, el.id, map, el.name, icon);
+                            var path = '/images/';
+                            var status = (el.status === undefined || el.status);
+                            insertPinPoint(pos, el.id, map, el.name, status);
                     })
                 }
             });
