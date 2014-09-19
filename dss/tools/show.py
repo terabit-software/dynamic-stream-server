@@ -2,9 +2,12 @@ import sys
 from . import thread
 from . import log
 
+from ..config import config
+
 
 class Show(object):
-    dsslog = 'dss.log'
+    save = config.getboolean('log', 'save')
+    dsslog = config['log']['program_log']
     print_lock = thread.Lock()
 
     def __init__(self, owner, filename=dsslog):
@@ -19,8 +22,9 @@ class Show(object):
             print(*args, **kw)
             sys.stdout.flush()
 
-        sep = kw.get('sep', ' ')
-        self.logger.log(sep.join(map(str, args)), level=level)
+        if self.save:
+            sep = kw.get('sep', ' ')
+            self.logger.log(sep.join(map(str, args)), level=level)
 
     def __getattr__(self, name):
         level = log.Levels(name)
