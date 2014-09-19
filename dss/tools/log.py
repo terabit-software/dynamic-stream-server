@@ -24,7 +24,7 @@ class Writer(object):
         self.filename = filename
         self._opened = False
         self.file = None
-        self._format = '[{date}|{owner}|{level.name}] {message}'
+        self._format = '[{date}] [{owner}] {level.name}: {message}'
 
     def format(self, owner, level, message):
         now = datetime.datetime.now()
@@ -66,3 +66,10 @@ class Log(object):
     def log(self, message, level=Levels.info):
         self.writer.add(self.owner, level, message)
 
+    def __getattr__(self, name):
+        level = Levels(name)
+
+        def call(message):
+            return self.log(message, level=level)
+
+        return call
