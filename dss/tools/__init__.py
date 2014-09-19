@@ -1,6 +1,12 @@
 from __future__ import print_function
 
 
+def show(*args, **kw):
+    # Compatibility with dss 0.6 or older.
+    # Use dss.tools.show.show instead
+    print(*args, **kw)
+
+
 class DictObj(dict):
     """ Dictionary with attribute syntax to get, set and delete items.
     """
