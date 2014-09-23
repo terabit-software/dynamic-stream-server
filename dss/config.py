@@ -82,3 +82,18 @@ create_dir(config['mobile']['dir'])
 create_dir(config['recorder']['dir'])
 
 PROVIDER_CONFIG_ENCODING = config['providers']['conf_file_enc']
+
+
+#### Compatibility with older versions.
+def _move_option(origin, destination, key, destination_key=None):
+    value = config.get(origin, key, fallback=None)
+    if value is None:
+        return
+    if destination_key is not None:
+        key = destination_key
+    config[destination][key] = value
+
+# Up to version 0.7, auto_start and auto_start_provider were part of
+# "general". Now they are on "video_start"
+_move_option('general', 'video_start', 'auto_start')
+_move_option('general', 'video_start', 'auto_start_provider')

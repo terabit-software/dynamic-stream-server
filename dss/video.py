@@ -264,10 +264,10 @@ class Video(object):
 
     @classmethod
     def auto_start(cls):
-        for id in config['general'].get_list('auto_start'):
+        for id in config['video_start'].get_list('auto_start'):
             cls.start(id)
 
-        for p in config['general'].get_list('auto_start_provider'):
+        for p in config['video_start'].get_list('auto_start_provider'):
             streams = Providers.select(p).streams()
             for id in streams:
                 cls.start(id)
