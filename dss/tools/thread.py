@@ -9,6 +9,9 @@ from itertools import islice
 Lock = threading.Lock
 RLock = threading.RLock
 Timer = threading.Timer
+if not isinstance(Timer, type):
+    # Python 2.x compatibility.
+    Timer = threading._Timer
 
 
 class MetaLockedObject(type):
