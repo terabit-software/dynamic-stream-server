@@ -126,7 +126,12 @@ class Thumbnail(object):
                 )
                 done = {}
                 for future in futures.as_completed(map):
-                    done[map[future]] = future.result()
+                    _id = map[future]
+                    try:
+                        done[_id] = future.result()
+                    except Exception as e:
+                        show.error('Thumbnail download error ({0}):'.format(_id), repr(e))
+                        done[_id] = -1
                 error = [x for x in cls.stream_list if done[x] != 0]
 
                 if cls.run:  # Show stats
