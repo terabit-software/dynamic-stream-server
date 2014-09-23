@@ -1,14 +1,15 @@
 """"
     Transform XML in usable stuff
 """
-
-__all__ = 'load', 'load_node'
+from __future__ import absolute_import
 
 from xml.etree import ElementTree
 import itertools
 import operator
 
-    
+__all__ = 'load', 'load_node'
+
+
 def _sorted_groupby(thing, key=None):
     return itertools.groupby(sorted(thing, key=key), key=key)
 
