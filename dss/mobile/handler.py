@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import division
 import os
 import json
 import struct
@@ -212,7 +213,7 @@ class MediaHandler(socketserver.BaseRequestHandler, object):
             thumb['dir'], self.get_stream_name()
         ) + '.' + thumb['format']
 
-        thumb_rate = str(1 / int(thumb['mobile_interval']))
+        thumb_rate = str(1. / int(thumb['mobile_interval']))
 
         args = ffmpeg.cmd_inputs_outputs(
             '-y -re', [audio_filename, video_filename], '',
