@@ -85,4 +85,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if config.getboolean('general', 'daemon'):
+        import daemon
+        with daemon.DaemonContext():
+            main()
+    else:
+        main()
