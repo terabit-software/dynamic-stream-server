@@ -62,8 +62,8 @@ class DataProc(thread.Thread):
             'info': obj
         })
 
-        show('Stream: {0} | {1} | {2}'.format(
-            self.parent._id, obj['time'], obj['coord'])
+        show('Stream: {0} | {1}'.format(
+            self.parent._id, obj['coord'])
         )
 
     def stop(self):
