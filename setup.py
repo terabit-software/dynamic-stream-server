@@ -17,6 +17,16 @@ install_requires = [
     'pymongo',
 ]
 
+if py_version < (3, 0):
+    install_requires += [
+        'python-daemon'
+    ]
+else:
+    install_requires += [
+        'python-daemon-3K'
+    ]
+
+
 if py_version < (3, 2):
     install_requires += [
         'futures',
