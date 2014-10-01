@@ -14,7 +14,10 @@ def run_proc(id, cmd, mode):
 
         This should be used as a context manager to close the log file.
     """
-    log = os.path.join(LOG_DIR, '{0}-{1}'.format(mode, id))
+    log = os.path.join(LOG_DIR, '{0}-{1}'.format(mode, id)) \
+        if config.getboolean('log', 'enable_process_log') \
+        else os.devnull
+
     with open(log, 'w') as f:
         return Popen(
             cmd,
