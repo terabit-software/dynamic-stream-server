@@ -192,14 +192,7 @@ class Thumbnail(object):
         return outputs
 
     @classmethod
-    def make_cmd(cls, name, source, seek=None, origin=None):
-        """ Generate FFmpeg command for thumbnail generation.
-        """
-        thumb = cls._thumb
-        out_opt = thumb['output_opt']
-        if seek is not None:
-            out_opt += ' -ss ' + str(seek)
-
+    def make_resize_cmd(cls, name, origin=None):
         # If fetching thumbnail from origin server, will need the stream
         # id that is different from stream name.
         id = name
@@ -210,6 +203,19 @@ class Thumbnail(object):
 
         resize_opt = cls._thumb['resize_opt']
         resize = [''] + [resize_opt.format(s[1]) for s in sizes]
+        return resize, outputs
+
+
+    @classmethod
+    def make_cmd(cls, name, source, seek=None, origin=None):
+        """ Generate FFmpeg command for thumbnail generation.
+        """
+        thumb = cls._thumb
+        out_opt = thumb['output_opt']
+        if seek is not None:
+            out_opt += ' -ss ' + str(seek)
+
+        resize, outputs = cls.make_resize_cmd(name, origin)
 
         return ffmpeg.cmd_outputs(
             thumb['input_opt'],
