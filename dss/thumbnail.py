@@ -92,6 +92,9 @@ class Thumbnail(object):
                 if not Thumbnail.run:
                     return
 
+            if Video.get_stream(self.id).alive:
+                return None
+
             with self._open_proc() as self.proc:
                 thread.Thread(self._waiter).start()
 
@@ -132,14 +135,20 @@ class Thumbnail(object):
                     except Exception as e:
                         show.error('Thumbnail download error ({0}):'.format(_id), repr(e))
                         done[_id] = -1
-                error = [x for x in cls.stream_list if done[x] != 0]
+                error = [x for x in cls.stream_list if done[x] not in (0, None)]
+                skip = [x for x in cls.stream_list if done[x] is None]
 
                 if cls.run:  # Show stats
-                    cams = len(cls.stream_list)
-                    show('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
+                    nstreams = len(cls.stream_list) - len(skip)
+                    show('Finished fetching thumbnails: {0}/{1}'
+                         .format(nstreams - len(error), nstreams))
                     if error:
                         show.warn('Could not fetch:')
                         show.warn(', '.join(error))
+                    if skip:
+                        show.info('Skipped because streams are active ({0}):'
+                                  .format(len(skip)))
+                        show.info(', '.join(skip))
 
                 error = set(error)
                 for s in cls.stream_list:  # Record stats
