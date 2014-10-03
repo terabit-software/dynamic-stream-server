@@ -92,6 +92,9 @@ class Thumbnail(object):
                 if not Thumbnail.run:
                     return
 
+            if Video.get_stream(self.id).alive:
+                return None
+
             with self._open_proc() as self.proc:
                 thread.Thread(self._waiter).start()
 
@@ -132,14 +135,20 @@ class Thumbnail(object):
                     except Exception as e:
                         show.error('Thumbnail download error ({0}):'.format(_id), repr(e))
                         done[_id] = -1
-                error = [x for x in cls.stream_list if done[x] != 0]
+                error = [x for x in cls.stream_list if done[x] not in (0, None)]
+                skip = [x for x in cls.stream_list if done[x] is None]
 
                 if cls.run:  # Show stats
-                    cams = len(cls.stream_list)
-                    show('Finished fetching thumbnails: {0}/{1}'.format(cams - len(error), cams))
+                    nstreams = len(cls.stream_list) - len(skip)
+                    show('Finished fetching thumbnails: {0}/{1}'
+                         .format(nstreams - len(error), nstreams))
                     if error:
                         show.warn('Could not fetch:')
                         show.warn(', '.join(error))
+                    if skip:
+                        show.info('Skipped because streams are active ({0}):'
+                                  .format(len(skip)))
+                        show.info(', '.join(skip))
 
                 error = set(error)
                 for s in cls.stream_list:  # Record stats
@@ -183,24 +192,30 @@ class Thumbnail(object):
         return outputs
 
     @classmethod
+    def make_resize_cmd(cls, id):
+        outputs, sizes = cls.make_file_names(id, resize_information=True)
+
+        resize_opt = cls._thumb['resize_opt']
+        resize = [''] + [resize_opt.format(s[1]) for s in sizes]
+        return resize, outputs
+
+
+    @classmethod
     def make_cmd(cls, name, source, seek=None, origin=None):
         """ Generate FFmpeg command for thumbnail generation.
         """
-        thumb = cls._thumb
-        out_opt = thumb['output_opt']
-        if seek is not None:
-            out_opt += ' -ss ' + str(seek)
-
         # If fetching thumbnail from origin server, will need the stream
         # id that is different from stream name.
         id = name
         if origin:
             id = origin.get_id(name)
 
-        outputs, sizes = cls.make_file_names(id, resize_information=True)
+        thumb = cls._thumb
+        out_opt = thumb['output_opt']
+        if seek is not None:
+            out_opt += ' -ss ' + str(seek)
 
-        resize_opt = cls._thumb['resize_opt']
-        resize = [''] + [resize_opt.format(s[1]) for s in sizes]
+        resize, outputs = cls.make_resize_cmd(id)
 
         return ffmpeg.cmd_outputs(
             thumb['input_opt'],
