@@ -3,6 +3,8 @@ import re
 from ..tools import ffmpeg
 from ..config import config
 
+from .. import thumbnail
+
 
 class BaseStreamProvider(object):
     """ Basic stream provider system with a text identifier and a number
@@ -28,11 +30,26 @@ class BaseStreamProvider(object):
             remote source.
         """
         stream = cls.get_stream(id)
-        return ffmpeg.cmd(
-            cls.conf['input_opt'],
-            cls.in_stream.format(stream),
-            cls.conf['output_opt'],
-            cls.out_stream.format(id),
+        resize = []
+        thumb_outputs = []
+
+        if config.get('thumbnail', 'enabled'):
+            # This rate is only valid if the stream timestamp is correct
+            # On cases (e.g. MJPEG) where the user needs to create a new
+            # timestamp on the transcoding step, those options will not
+            # be passed to the thumbnail step, thus the images will be
+            # generated on a possibly slower rate.
+            rate = 1. / config.getfloat('thumbnail', 'live_interval')
+
+            resize, thumb_outputs = thumbnail.Thumbnail.make_resize_cmd(id)
+            resize = [r + ' -update 1 -r ' + str(rate) for r in resize]
+            print(resize, thumb_outputs)
+
+        return ffmpeg.cmd_outputs(
+            cls.conf['input_opt'] + ' -y',
+            cls.in_stream.format(stream), '',
+            [cls.conf['output_opt']] + resize,
+            [cls.out_stream.format(id)] + thumb_outputs,
         )
 
     @classmethod
