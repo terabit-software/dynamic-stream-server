@@ -2,6 +2,8 @@
 Dynamic Stream Server
 ====
 
+[![Build Status](https://travis-ci.org/terabit-software/dynamic-stream-server.svg?branch=master)](https://travis-ci.org/terabit-software/dynamic-stream-server)
+
 * Version: 0.7
 * Authors:
     * [João Bernardo Oliveira](https://github.com/jbvsmo/)

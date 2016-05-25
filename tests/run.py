@@ -43,8 +43,8 @@ def run():
             suite.addTest(unittest.defaultTestLoader.loadTestsFromName(test))
 
 
-    unittest.TextTestRunner(verbosity=2).run(suite)
-
+    out = unittest.TextTestRunner(verbosity=2).run(suite).errors
+    return len(out)
 
 if __name__ == '__main__':
-    run()
+    sys.exit(run())
