@@ -11,7 +11,7 @@ Dynamic Stream Server
 * Git: <https://github.com/terabit-software/dynamic-stream-server>
 * Wiki: <https://github.com/terabit-software/dynamic-stream-server/wiki>
 * License: [BSD](COPYRIGHT)
-* Contact: <contato@terabit.com.br>
+* Contact: <contato@terabittecnologia.com>
 
 ----
 
